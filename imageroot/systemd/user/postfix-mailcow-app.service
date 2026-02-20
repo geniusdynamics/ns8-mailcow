@@ -1,0 +1,38 @@
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman  postfix-mailcow-app.service
+BindsTo=mailcow.service
+After=mailcow.service mysql-mailcow-app.service unbound-mailcow-app.service postfix-tlspol-mailcow-app.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/smarthost.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/mkdir -p tmp
+ExecStartPre=/bin/rm -f %t/postfix-mailcow-app.pid %t/postfix-mailcow-app.ctr-id
+ExecStartPre=-runagent discover-smarthost
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/postfix-mailcow-app.pid  --cidfile %t/postfix-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  postfix-mailcow-app   \
+    --volume hooks-postfix:/hooks:Z:Z \
+    --volume conf-postfix:/opt/postfix/conf:z:Z \
+    --volume assets-ssl:/etc/ssl/mail/:ro,z:Z \
+    --volume postfix-vol-1:/var/spool/postfix:Z \
+    --volume crypt-vol-1:/var/lib/zeyple:Z \
+    --volume rspamd-vol-1:/var/lib/rspamd:Z \
+    --volume mysql-socket-vol-1:/var/run/mysqld/:z:Z   \
+    --env-file postfix-mailcow.env  ${POSTFIX_IMAGE}  
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/postfix-mailcow-app.ctr-id -t 10
+ExecReload=/usr/bin/podman kill -s HUP postfix-mailcow-app
+SyslogIdentifier=%u
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/postfix-mailcow-app.ctr-id
+PIDFile=%t/postfix-mailcow-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target
