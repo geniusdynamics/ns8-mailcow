@@ -11,9 +11,9 @@ set -e
 # Prepare variables for later use
 images=()
 # The image will be pushed to GitHub container registry
-repobase="${REPOBASE:-ghcr.io/{{ GITHUB_OWNER }}}"
+repobase="${REPOBASE:-ghcr.io/geniusdynamics}"
 # Configure the image name
-reponame="{{ IMAGE_NAME }}"
+reponame="mailcow"
 
 # Create a new empty container image
 container=$(buildah from scratch)
@@ -45,7 +45,7 @@ buildah config --entrypoint=/ \
     --label="org.nethserver.authorizations=traefik@node:routeadm" \
     --label="org.nethserver.tcp-ports-demand=1" \
     --label="org.nethserver.rootfull=0" \
-    --label="org.nethserver.images={{ IMAGES }}" \
+    --label="org.nethserver.images=ghcr.io/mailcow/unbound:1.24 ghcr.io/mailcow/clamd:1.71 ghcr.io/mailcow/sogo:5.12.4-1 ghcr.io/mailcow/dovecot:2.3.21.1-1 ghcr.io/mailcow/postfix-tlspol:1.8.22 ghcr.io/mailcow/nginx:1.05 ghcr.io/mailcow/dockerapi:2.11 ghcr.io/mailcow/olefy:1.15 mariadb:10.11 ghcr.io/mailcow/postfix:3.7.11-1 docker.io/memcached:alpine ghcr.io/mailcow/acme:1.95 ghcr.io/mailcow/netfilter:1.63 ghcr.io/mailcow/watchdog:2.09 redis:7.4.6-alpine ghcr.io/mailcow/rspamd:3.14.2 docker.io/mcuadros/ofelia:latest ghcr.io/mailcow/phpfpm:8.2.29-1" \
     "${container}"
 # Commit the image
 buildah commit "${container}" "${repobase}/${reponame}"
