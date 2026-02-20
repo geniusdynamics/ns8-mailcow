@@ -173,3 +173,17 @@ nginx-mailcow = {
  "RSPAMDHOST" : RSPAMDHOST ,
 } 
 agent.write_envfile("nginx-mailcow.env", nginx-mailcow) 
+REDIS_SLAVEOF_IP = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
+REDIS_SLAVEOF_PORT = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
+REDISPASS = data.get("REDISPASS", "${REDISPASS}") 
+DBROOT = data.get("DBROOT", "${DBROOT}") 
+TZ = data.get("TZ", "${TZ}") 
+ 
+dockerapi-mailcow = { 
+ "REDIS_SLAVEOF_IP" : REDIS_SLAVEOF_IP ,
+ "REDIS_SLAVEOF_PORT" : REDIS_SLAVEOF_PORT ,
+ "REDISPASS" : REDISPASS ,
+ "DBROOT" : DBROOT ,
+ "TZ" : TZ ,
+} 
+agent.write_envfile("dockerapi-mailcow.env", dockerapi-mailcow) 
