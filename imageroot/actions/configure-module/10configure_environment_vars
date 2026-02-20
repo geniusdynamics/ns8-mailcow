@@ -187,3 +187,27 @@ dockerapi-mailcow = {
  "TZ" : TZ ,
 } 
 agent.write_envfile("dockerapi-mailcow.env", dockerapi-mailcow) 
+OLEFY_BINDADDRESS = data.get("OLEFY_BINDADDRESS", "0.0.0.0") 
+OLEFY_TMPDIR = data.get("OLEFY_TMPDIR", "/tmp") 
+OLEFY_PYTHON_PATH = data.get("OLEFY_PYTHON_PATH", "/usr/bin/python3") 
+OLEFY_LOGLVL = data.get("OLEFY_LOGLVL", "20") 
+OLEFY_MINLENGTH = data.get("OLEFY_MINLENGTH", "500") 
+OLEFY_DEL_TMP = data.get("OLEFY_DEL_TMP", "1") 
+TZ = data.get("TZ", "${TZ}") 
+OLEFY_BINDPORT = data.get("OLEFY_BINDPORT", "10055") 
+OLEFY_OLEVBA_PATH = data.get("OLEFY_OLEVBA_PATH", "/usr/bin/olevba") 
+SKIP_OLEFY = data.get("SKIP_OLEFY", "${SKIP_OLEFY:-n}") 
+ 
+olefy-mailcow = { 
+ "OLEFY_BINDADDRESS" : OLEFY_BINDADDRESS ,
+ "OLEFY_TMPDIR" : OLEFY_TMPDIR ,
+ "OLEFY_PYTHON_PATH" : OLEFY_PYTHON_PATH ,
+ "OLEFY_LOGLVL" : OLEFY_LOGLVL ,
+ "OLEFY_MINLENGTH" : OLEFY_MINLENGTH ,
+ "OLEFY_DEL_TMP" : OLEFY_DEL_TMP ,
+ "TZ" : TZ ,
+ "OLEFY_BINDPORT" : OLEFY_BINDPORT ,
+ "OLEFY_OLEVBA_PATH" : OLEFY_OLEVBA_PATH ,
+ "SKIP_OLEFY" : SKIP_OLEFY ,
+} 
+agent.write_envfile("olefy-mailcow.env", olefy-mailcow) 
