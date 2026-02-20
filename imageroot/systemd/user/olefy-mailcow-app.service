@@ -19,7 +19,7 @@ ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/olefy-mailcow-app.pid %t/olefy-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/olefy-mailcow-app.pid  --cidfile %t/olefy-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  olefy-mailcow-app     \
-    --env-file olefy-mailcow.env  ${OLEFY_IMAGE}  
+    --env-file olefy-mailcow.env  ${OLEFY_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/olefy-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP olefy-mailcow-app
 SyslogIdentifier=%u

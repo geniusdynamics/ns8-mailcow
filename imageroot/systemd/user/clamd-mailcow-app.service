@@ -19,9 +19,9 @@ ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/clamd-mailcow-app.pid %t/clamd-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/clamd-mailcow-app.pid  --cidfile %t/clamd-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  clamd-mailcow-app   \
-    --volume conf-clamav-:/etc/clamav/:Z:Z \
-    --volume clamd-db-vol-1:/var/lib/clamav:Z   \
-    --env-file clamd-mailcow.env  ${CLAMD_IMAGE}  
+    --volume conf-clamav:/etc/clamav/:Z \
+    --volume clamd-db-vol:/var/lib/clamav:Z   \
+    --env-file clamd-mailcow.env  ${CLAMD_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/clamd-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP clamd-mailcow-app
 SyslogIdentifier=%u

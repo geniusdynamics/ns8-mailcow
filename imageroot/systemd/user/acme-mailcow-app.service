@@ -19,11 +19,11 @@ ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/acme-mailcow-app.pid %t/acme-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/acme-mailcow-app.pid  --cidfile %t/acme-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  acme-mailcow-app   \
-    --volume web-well-known-acme-challenge:/var/www/acme:z:Z \
-    --volume assets-ssl:/var/lib/acme/:z:Z \
-    --volume assets-ssl-example:/var/lib/ssl-example/:ro,Z:Z \
-    --volume mysql-socket-vol-1:/var/run/mysqld/:z:Z   \
-    --env-file acme-mailcow.env  ${ACME_IMAGE}  
+    --volume web-well-known-acme-challenge:/var/www/acme:z \
+    --volume assets-ssl:/var/lib/acme/:z \
+    --volume assets-ssl-example:/var/lib/ssl-example/:ro,Z \
+    --volume mysql-socket-vol-1:/var/run/mysqld/:z   \
+    --env-file acme-mailcow.env  ${ACME_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/acme-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP acme-mailcow-app
 SyslogIdentifier=%u

@@ -19,7 +19,7 @@ ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/memcached-mailcow-app.pid %t/memcached-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/memcached-mailcow-app.pid  --cidfile %t/memcached-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  memcached-mailcow-app     \
-    --env-file memcached-mailcow.env  ${MEMCACHED_IMAGE}  
+    --env-file memcached-mailcow.env  ${MEMCACHED_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/memcached-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP memcached-mailcow-app
 SyslogIdentifier=%u

@@ -19,32 +19,32 @@ ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/php-fpm-mailcow-app.pid %t/php-fpm-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/php-fpm-mailcow-app.pid  --cidfile %t/php-fpm-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  php-fpm-mailcow-app   \
-    --volume hooks-phpfpm:/hooks:Z:Z \
-    --volume data-web:/web:z:Z \
-    --volume conf-rspamd-dynmaps:/dynmaps:ro,z:Z \
-    --volume rspamd-custom-:/rspamd_custom_maps:z:Z \
-    --volume dovecot-auth-mailcowauthphp:/mailcowauth/mailcowauth.php:z:Z \
-    --volume web-inc-functionsincphp:/mailcowauth/functions.inc.php:z:Z \
-    --volume web-inc-functionsauthincphp:/mailcowauth/functions.auth.inc.php:z:Z \
-    --volume web-inc-sessionsincphp:/mailcowauth/sessions.inc.php:z:Z \
-    --volume web-inc-functionsmailboxincphp:/mailcowauth/functions.mailbox.inc.php:z:Z \
-    --volume web-inc-functionsratelimitincphp:/mailcowauth/functions.ratelimit.inc.php:z:Z \
-    --volume web-inc-functionsaclincphp:/mailcowauth/functions.acl.inc.php:z:Z \
+    --volume hooks-phpfpm:/hooks:Z \
+    --volume data-web:/web:z \
+    --volume conf-rspamd-dynmaps:/dynmaps:ro,z \
+    --volume rspamd-custom:/rspamd_custom_maps:z \
+    --volume dovecot-auth-mailcowauthphp:/mailcowauth/mailcowauth.php:z \
+    --volume web-inc-functionsincphp:/mailcowauth/functions.inc.php:z \
+    --volume web-inc-functionsauthincphp:/mailcowauth/functions.auth.inc.php:z \
+    --volume web-inc-sessionsincphp:/mailcowauth/sessions.inc.php:z \
+    --volume web-inc-functionsmailboxincphp:/mailcowauth/functions.mailbox.inc.php:z \
+    --volume web-inc-functionsratelimitincphp:/mailcowauth/functions.ratelimit.inc.php:z \
+    --volume web-inc-functionsaclincphp:/mailcowauth/functions.acl.inc.php:z \
     --volume rspamd-vol-1:/var/lib/rspamd:Z \
-    --volume mysql-socket-vol-1:/var/run/mysqld/:z:Z \
-    --volume conf-sogo-:/etc/sogo/:z:Z \
-    --volume conf-rspamd-metaexporter:/meta_exporter:ro,z:Z \
-    --volume conf-phpfpm-crons:/crons:z:Z \
-    --volume phpfpm-sogo-sso-:/etc/sogo-sso/:z:Z \
-    --volume phpfpm-php-fpmd-poolsconf:/usr/local/etc/php-fpm.d/z-pools.conf:Z:Z \
-    --volume phpfpm-php-confd-opcache-recommendedini:/usr/local/etc/php/conf.d/opcache-recommended.ini:Z:Z \
-    --volume phpfpm-php-confd-uploadini:/usr/local/etc/php/conf.d/upload.ini:Z:Z \
-    --volume phpfpm-php-confd-otherini:/usr/local/etc/php/conf.d/zzz-other.ini:Z:Z \
-    --volume conf-dovecot-globalsievebefore:/global_sieve/before:z:Z \
-    --volume conf-dovecot-globalsieveafter:/global_sieve/after:z:Z \
-    --volume assets-templates:/tpls:z:Z \
-    --volume conf-nginx-:/etc/nginx/conf.d/:z:Z   \
-    --env-file php-fpm-mailcow.env  ${PHPFPM_IMAGE}  
+    --volume mysql-socket-vol-1:/var/run/mysqld/:z \
+    --volume conf-sogo:/etc/sogo/:z \
+    --volume conf-rspamd-metaexporter:/meta_exporter:ro,z \
+    --volume conf-phpfpm-crons:/crons:z \
+    --volume phpfpm-sogo-sso-:/etc/sogo-sso/:z \
+    --volume phpfpm-php-fpmd-poolsconf:/usr/local/etc/php-fpm.d/z-pools.conf:Z \
+    --volume phpfpm-php-confd-opcache-recommendedini:/usr/local/etc/php/conf.d/opcache-recommended.ini:Z \
+    --volume phpfpm-php-confd-uploadini:/usr/local/etc/php/conf.d/upload.ini:Z \
+    --volume phpfpm-php-confd-otherini:/usr/local/etc/php/conf.d/zzz-other.ini:Z \
+    --volume conf-dovecot-globalsievebefore:/global_sieve/before:z \
+    --volume conf-dovecot-globalsieveafter:/global_sieve/after:z \
+    --volume assets-templates:/tpls:z \
+    --volume conf-nginx:/etc/nginx/conf.d/:z   \
+    --env-file php-fpm-mailcow.env  ${PHPFPM_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/php-fpm-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP php-fpm-mailcow-app
 SyslogIdentifier=%u

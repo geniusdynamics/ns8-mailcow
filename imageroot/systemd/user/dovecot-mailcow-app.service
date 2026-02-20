@@ -19,19 +19,19 @@ ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/dovecot-mailcow-app.pid %t/dovecot-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/dovecot-mailcow-app.pid  --cidfile %t/dovecot-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  dovecot-mailcow-app   \
-    --volume hooks-dovecot:/hooks:Z:Z \
-    --volume conf-dovecot:/etc/dovecot:z:Z \
-    --volume assets-ssl:/etc/ssl/mail/:ro,z:Z \
-    --volume conf-sogo-:/etc/sogo/:z:Z \
-    --volume phpfpm-sogo-sso-:/etc/phpfpm/:z:Z \
+    --volume hooks-dovecot:/hooks:Z \
+    --volume conf-dovecot:/etc/dovecot:z \
+    --volume assets-ssl:/etc/ssl/mail/:ro,z \
+    --volume conf-sogo-:/etc/sogo/:z \
+    --volume phpfpm-sogo-sso-:/etc/phpfpm/:z \
     --volume vmail-vol-1:/var/vmail:Z \
     --volume vmail-index-vol-1:/var/vmail_index:Z \
     --volume crypt-vol-1:/mail_crypt/:Z \
-    --volume rspamd-custom-:/etc/rspamd/custom:z:Z \
-    --volume assets-templates:/templates:z:Z \
+    --volume rspamd-custom-:/etc/rspamd/custom:z \
+    --volume assets-templates:/templates:z \
     --volume rspamd-vol-1:/var/lib/rspamd:Z \
-    --volume mysql-socket-vol-1:/var/run/mysqld/:z:Z   \
-    --env-file dovecot-mailcow.env  ${DOVECOT_IMAGE}  
+    --volume mysql-socket-vol-1:/var/run/mysqld/:z \
+    --env-file dovecot-mailcow.env  ${DOVECOT_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/dovecot-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP dovecot-mailcow-app
 SyslogIdentifier=%u

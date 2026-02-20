@@ -19,19 +19,19 @@ ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/sogo-mailcow-app.pid %t/sogo-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/sogo-mailcow-app.pid  --cidfile %t/sogo-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  sogo-mailcow-app   \
-    --volume hooks-sogo:/hooks:Z:Z \
-    --volume conf-sogo-:/etc/sogo/:z:Z \
-    --volume web-inc-initdbincphp:/init_db.inc.php:z:Z \
-    --volume conf-sogo-custom-faviconico:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo.ico:z:Z \
-    --volume conf-sogo-custom-shortlogosvg:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo-compact.svg:z:Z \
-    --volume conf-sogo-custom-fulllogosvg:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo-full.svg:z:Z \
-    --volume conf-sogo-custom-fulllogopng:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo-logo.png:z:Z \
-    --volume conf-sogo-custom-themejs:/usr/lib/GNUstep/SOGo/WebServerResources/js/theme.js:z:Z \
-    --volume conf-sogo-custom-sogojs:/usr/lib/GNUstep/SOGo/WebServerResources/js/custom-sogo.js:z:Z \
-    --volume mysql-socket-vol-1:/var/run/mysqld/:z:Z \
+    --volume hooks-sogo:/hooks:Z \
+    --volume conf-sogo:/etc/sogo/:z \
+    --volume web-inc-initdbincphp:/init_db.inc.php:z \
+    --volume conf-sogo-custom-faviconico:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo.ico:z \
+    --volume conf-sogo-custom-shortlogosvg:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo-compact.svg:z \
+    --volume conf-sogo-custom-fulllogosvg:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo-full.svg:z \
+    --volume conf-sogo-custom-fulllogopng:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo-logo.png:z \
+    --volume conf-sogo-custom-themejs:/usr/lib/GNUstep/SOGo/WebServerResources/js/theme.js:z \
+    --volume conf-sogo-custom-sogojs:/usr/lib/GNUstep/SOGo/WebServerResources/js/custom-sogo.js:z \
+    --volume mysql-socket-vol-1:/var/run/mysqld/:z \
     --volume sogo-web-vol-1:/sogo_web:Z \
     --volume sogo-userdata-backup-vol-1:/sogo_backup:Z   \
-    --env-file sogo-mailcow.env  ${SOGO_IMAGE}  
+    --env-file sogo-mailcow.env  ${SOGO_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/sogo-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP sogo-mailcow-app
 SyslogIdentifier=%u

@@ -19,9 +19,9 @@ ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/redis-mailcow-app.pid %t/redis-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/redis-mailcow-app.pid  --cidfile %t/redis-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  redis-mailcow-app   \
-    --volume redis-vol-1:/data/:Z \
-    --volume conf-redis-redis-confsh:/redis-conf.sh:z:Z   \
-    --env-file redis-mailcow.env  ${REDIS_IMAGE}  
+    --volume redis-vol:/data/:Z \
+    --volume conf-redis-redis-confsh:/redis-conf.sh:z   \
+    --env-file redis-mailcow.env  ${REDIS_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/redis-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP redis-mailcow-app
 SyslogIdentifier=%u

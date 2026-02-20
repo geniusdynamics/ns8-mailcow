@@ -20,7 +20,7 @@ ExecStartPre=/bin/rm -f %t/ofelia-mailcow-app.pid %t/ofelia-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/ofelia-mailcow-app.pid  --cidfile %t/ofelia-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  ofelia-mailcow-app   \
     --volume run-dockersock:/var/run/docker.sock:ro:Z   \
-    --env-file ofelia-mailcow.env  ${OFELIA_IMAGE}  
+    --env-file ofelia-mailcow.env  ${OFELIA_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/ofelia-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP ofelia-mailcow-app
 SyslogIdentifier=%u

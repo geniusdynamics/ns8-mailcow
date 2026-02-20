@@ -19,17 +19,17 @@ ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/nginx-mailcow-app.pid %t/nginx-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/nginx-mailcow-app.pid  --cidfile %t/nginx-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  nginx-mailcow-app   \
-    --volume data-web:/web:ro,z:Z \
-    --volume conf-rspamd-dynmaps:/dynmaps:ro,z:Z \
-    --volume assets-ssl-:/etc/ssl/mail/:ro,z:Z \
-    --volume conf-nginx-:/etc/nginx/conf.d/:z:Z \
-    --volume conf-rspamd-metaexporter:/meta_exporter:ro,z:Z \
-    --volume dovecot-auth-mailcowauthphp:/mailcowauth/mailcowauth.php:z:Z \
-    --volume web-inc-functionsincphp:/mailcowauth/functions.inc.php:z:Z \
-    --volume web-inc-functionsauthincphp:/mailcowauth/functions.auth.inc.php:z:Z \
-    --volume web-inc-sessionsincphp:/mailcowauth/sessions.inc.php:z:Z \
-    --volume sogo-web-vol-1:/usr/lib/GNUstep/SOGo/:Z   \
-    --env-file nginx-mailcow.env  ${NGINX_IMAGE}  
+    --volume data-web:/web:ro,z \
+    --volume conf-rspamd-dynmaps:/dynmaps:ro,z \
+    --volume assets-ssl:/etc/ssl/mail/:ro,z \
+    --volume conf-nginx:/etc/nginx/conf.d/:z \
+    --volume conf-rspamd-metaexporter:/meta_exporter:ro,z \
+    --volume dovecot-auth-mailcowauthphp:/mailcowauth/mailcowauth.php:z \
+    --volume web-inc-functionsincphp:/mailcowauth/functions.inc.php:z \
+    --volume web-inc-functionsauthincphp:/mailcowauth/functions.auth.inc.php:z \
+    --volume web-inc-sessionsincphp:/mailcowauth/sessions.inc.php:z \
+    --volume sogo-web-vol-1:/usr/lib/GNUstep/SOGo/:Z \
+    --env-file nginx-mailcow.env  ${NGINX_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/nginx-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP nginx-mailcow-app
 SyslogIdentifier=%u

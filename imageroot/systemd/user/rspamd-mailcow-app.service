@@ -19,16 +19,16 @@ ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/rspamd-mailcow-app.pid %t/rspamd-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/rspamd-mailcow-app.pid  --cidfile %t/rspamd-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  rspamd-mailcow-app   \
-    --volume hooks-rspamd:/hooks:Z:Z \
-    --volume rspamd-custom-:/etc/rspamd/custom:z:Z \
-    --volume rspamd-overrided-:/etc/rspamd/override.d:Z:Z \
-    --volume rspamd-locald-:/etc/rspamd/local.d:Z:Z \
-    --volume rspamd-pluginsd-:/etc/rspamd/plugins.d:Z:Z \
-    --volume rspamd-lua-:/etc/rspamd/lua/:ro,Z:Z \
-    --volume conf-rspamd-rspamdconflocal:/etc/rspamd/rspamd.conf.local:Z:Z \
-    --volume conf-rspamd-rspamdconfoverride:/etc/rspamd/rspamd.conf.override:Z:Z \
-    --volume rspamd-vol-1:/var/lib/rspamd:Z   \
-    --env-file rspamd-mailcow.env  ${RSPAMD_IMAGE}  
+    --volume hooks-rspamd:/hooks:Z \
+    --volume rspamd-custom:/etc/rspamd/custom:z:Z \
+    --volume rspamd-overrided:/etc/rspamd/override.d:Z \
+    --volume rspamd-locald:/etc/rspamd/local.d:Z \
+    --volume rspamd-pluginsd:/etc/rspamd/plugins.d:Z \
+    --volume rspamd-lua:/etc/rspamd/lua/:ro,Z \
+    --volume conf-rspamd-rspamdconflocal:/etc/rspamd/rspamd.conf.local:Z \
+    --volume conf-rspamd-rspamdconfoverride:/etc/rspamd/rspamd.conf.override:Z \
+    --volume rspamd-vol:/var/lib/rspamd:Z   \
+    --env-file rspamd-mailcow.env  ${RSPAMD_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/rspamd-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP rspamd-mailcow-app
 SyslogIdentifier=%u

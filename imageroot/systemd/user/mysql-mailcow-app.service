@@ -19,10 +19,10 @@ ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/mysql-mailcow-app.pid %t/mysql-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/mysql-mailcow-app.pid  --cidfile %t/mysql-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  mysql-mailcow-app   \
-    --volume mysql-vol-1:/var/lib/mysql/:Z \
-    --volume mysql-socket-vol-1:/var/run/mysqld/:z:Z \
-    --volume conf-mysql-:/etc/mysql/conf.d/:ro,Z:Z   \
-    --env-file mysql-mailcow.env  ${MARIADB_IMAGE}  
+    --volume mysql-vol:/var/lib/mysql/:Z \
+    --volume mysql-socket-vol:/var/run/mysqld/:z \
+    --volume conf-mysql:/etc/mysql/conf.d/:ro,Z   \
+    --env-file mysql-mailcow.env  ${MARIADB_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/mysql-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP mysql-mailcow-app
 SyslogIdentifier=%u

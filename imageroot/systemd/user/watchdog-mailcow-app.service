@@ -20,10 +20,10 @@ ExecStartPre=/bin/rm -f %t/watchdog-mailcow-app.pid %t/watchdog-mailcow-app.ctr-
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/watchdog-mailcow-app.pid  --cidfile %t/watchdog-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  watchdog-mailcow-app   \
     --volume rspamd-vol-1:/var/lib/rspamd:Z \
-    --volume mysql-socket-vol-1:/var/run/mysqld/:z:Z \
+    --volume mysql-socket-vol-1:/var/run/mysqld/:z \
     --volume postfix-vol-1:/var/spool/postfix:Z \
-    --volume assets-ssl:/etc/ssl/mail/:ro,z:Z   \
-    --env-file watchdog-mailcow.env  ${WATCHDOG_IMAGE}  
+    --volume assets-ssl:/etc/ssl/mail/:ro,z   \
+    --env-file watchdog-mailcow.env  ${WATCHDOG_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/watchdog-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP watchdog-mailcow-app
 SyslogIdentifier=%u
