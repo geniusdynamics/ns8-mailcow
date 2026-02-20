@@ -211,3 +211,27 @@ olefy-mailcow = {
  "SKIP_OLEFY" : SKIP_OLEFY ,
 } 
 agent.write_envfile("olefy-mailcow.env", olefy-mailcow) 
+DBPASS = data.get("DBPASS", "${DBPASS}") 
+REDIS_SLAVEOF_IP = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
+REDIS_SLAVEOF_PORT = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
+REDISPASS = data.get("REDISPASS", "${REDISPASS}") 
+SPAMHAUS_DQS_KEY = data.get("SPAMHAUS_DQS_KEY", "${SPAMHAUS_DQS_KEY:-}") 
+LOG_LINES = data.get("LOG_LINES", "${LOG_LINES:-9999}") 
+DBNAME = data.get("DBNAME", "${DBNAME}") 
+DBUSER = data.get("DBUSER", "${DBUSER}") 
+MAILCOW_HOSTNAME = data.get("MAILCOW_HOSTNAME", "${MAILCOW_HOSTNAME}") 
+TZ = data.get("TZ", "${TZ}") 
+ 
+postfix-mailcow = { 
+ "DBPASS" : DBPASS ,
+ "REDIS_SLAVEOF_IP" : REDIS_SLAVEOF_IP ,
+ "REDIS_SLAVEOF_PORT" : REDIS_SLAVEOF_PORT ,
+ "REDISPASS" : REDISPASS ,
+ "SPAMHAUS_DQS_KEY" : SPAMHAUS_DQS_KEY ,
+ "LOG_LINES" : LOG_LINES ,
+ "DBNAME" : DBNAME ,
+ "DBUSER" : DBUSER ,
+ "MAILCOW_HOSTNAME" : MAILCOW_HOSTNAME ,
+ "TZ" : TZ ,
+} 
+agent.write_envfile("postfix-mailcow.env", postfix-mailcow) 
