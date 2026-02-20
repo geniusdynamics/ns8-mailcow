@@ -1,0 +1,43 @@
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman  sogo-mailcow-app.service
+BindsTo=mailcow.service
+After=mailcow.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/smarthost.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/mkdir -p tmp
+ExecStartPre=/bin/rm -f %t/sogo-mailcow-app.pid %t/sogo-mailcow-app.ctr-id
+ExecStartPre=-runagent discover-smarthost
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/sogo-mailcow-app.pid  --cidfile %t/sogo-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  sogo-mailcow-app   \
+    --volume hooks-sogo:/hooks:Z:Z \
+    --volume conf-sogo-:/etc/sogo/:z:Z \
+    --volume web-inc-initdbincphp:/init_db.inc.php:z:Z \
+    --volume conf-sogo-custom-faviconico:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo.ico:z:Z \
+    --volume conf-sogo-custom-shortlogosvg:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo-compact.svg:z:Z \
+    --volume conf-sogo-custom-fulllogosvg:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo-full.svg:z:Z \
+    --volume conf-sogo-custom-fulllogopng:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo-logo.png:z:Z \
+    --volume conf-sogo-custom-themejs:/usr/lib/GNUstep/SOGo/WebServerResources/js/theme.js:z:Z \
+    --volume conf-sogo-custom-sogojs:/usr/lib/GNUstep/SOGo/WebServerResources/js/custom-sogo.js:z:Z \
+    --volume mysql-socket-vol-1:/var/run/mysqld/:z:Z \
+    --volume sogo-web-vol-1:/sogo_web:Z \
+    --volume sogo-userdata-backup-vol-1:/sogo_backup:Z   \
+    --env-file sogo-mailcow.env  ${SOGO_IMAGE}  
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/sogo-mailcow-app.ctr-id -t 10
+ExecReload=/usr/bin/podman kill -s HUP sogo-mailcow-app
+SyslogIdentifier=%u
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/sogo-mailcow-app.ctr-id
+PIDFile=%t/sogo-mailcow-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target
