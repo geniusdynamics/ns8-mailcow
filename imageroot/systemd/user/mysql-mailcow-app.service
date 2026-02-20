@@ -1,0 +1,34 @@
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman  mysql-mailcow-app.service
+BindsTo=mailcow.service
+After=mailcow.service unbound-mailcow-app.service netfilter-mailcow-app.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/smarthost.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/mkdir -p tmp
+ExecStartPre=/bin/rm -f %t/mysql-mailcow-app.pid %t/mysql-mailcow-app.ctr-id
+ExecStartPre=-runagent discover-smarthost
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/mysql-mailcow-app.pid  --cidfile %t/mysql-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  mysql-mailcow-app   \
+    --volume mysql-vol-1:/var/lib/mysql/:Z \
+    --volume mysql-socket-vol-1:/var/run/mysqld/:z:Z \
+    --volume conf-mysql-:/etc/mysql/conf.d/:ro,Z:Z   \
+    --env-file mysql-mailcow.env  ${MARIADB_IMAGE}  
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/mysql-mailcow-app.ctr-id -t 10
+ExecReload=/usr/bin/podman kill -s HUP mysql-mailcow-app
+SyslogIdentifier=%u
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/mysql-mailcow-app.ctr-id
+PIDFile=%t/mysql-mailcow-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target
