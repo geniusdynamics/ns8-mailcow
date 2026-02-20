@@ -427,3 +427,21 @@ redis-mailcow = {
  "REDISMASTERPASS" : REDISMASTERPASS ,
 } 
 agent.write_envfile("redis-mailcow.env", redis-mailcow) 
+TZ = data.get("TZ", "${TZ}") 
+IPV4_NETWORK = data.get("IPV4_NETWORK", "${IPV4_NETWORK:-172.22.1}") 
+IPV6_NETWORK = data.get("IPV6_NETWORK", "${IPV6_NETWORK:-fd4d:6169:6c63:6f77::/64}") 
+REDIS_SLAVEOF_IP = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
+REDIS_SLAVEOF_PORT = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
+REDISPASS = data.get("REDISPASS", "${REDISPASS}") 
+SPAMHAUS_DQS_KEY = data.get("SPAMHAUS_DQS_KEY", "${SPAMHAUS_DQS_KEY:-}") 
+ 
+rspamd-mailcow = { 
+ "TZ" : TZ ,
+ "IPV4_NETWORK" : IPV4_NETWORK ,
+ "IPV6_NETWORK" : IPV6_NETWORK ,
+ "REDIS_SLAVEOF_IP" : REDIS_SLAVEOF_IP ,
+ "REDIS_SLAVEOF_PORT" : REDIS_SLAVEOF_PORT ,
+ "REDISPASS" : REDISPASS ,
+ "SPAMHAUS_DQS_KEY" : SPAMHAUS_DQS_KEY ,
+} 
+agent.write_envfile("rspamd-mailcow.env", rspamd-mailcow) 
