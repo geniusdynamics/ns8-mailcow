@@ -23,3 +23,11 @@ unbound-mailcow = {
  "SKIP_UNBOUND_HEALTHCHECK" : SKIP_UNBOUND_HEALTHCHECK ,
 } 
 agent.write_envfile("unbound-mailcow.env", unbound-mailcow) 
+TZ = data.get("TZ", "${TZ}") 
+SKIP_CLAMD = data.get("SKIP_CLAMD", "${SKIP_CLAMD:-n}") 
+ 
+clamd-mailcow = { 
+ "TZ" : TZ ,
+ "SKIP_CLAMD" : SKIP_CLAMD ,
+} 
+agent.write_envfile("clamd-mailcow.env", clamd-mailcow) 
