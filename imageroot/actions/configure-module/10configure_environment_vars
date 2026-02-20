@@ -417,3 +417,13 @@ watchdog-mailcow = {
  "REDIS_THRESHOLD" : REDIS_THRESHOLD ,
 } 
 agent.write_envfile("watchdog-mailcow.env", watchdog-mailcow) 
+TZ = data.get("TZ", "${TZ}") 
+REDISPASS = data.get("REDISPASS", "${REDISPASS}") 
+REDISMASTERPASS = data.get("REDISMASTERPASS", "${REDISMASTERPASS:-}") 
+ 
+redis-mailcow = { 
+ "TZ" : TZ ,
+ "REDISPASS" : REDISPASS ,
+ "REDISMASTERPASS" : REDISMASTERPASS ,
+} 
+agent.write_envfile("redis-mailcow.env", redis-mailcow) 
