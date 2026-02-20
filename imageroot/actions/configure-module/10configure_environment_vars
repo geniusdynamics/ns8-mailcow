@@ -15,3 +15,11 @@ data = json.load(sys.stdin)
 
 #This is specific to you module, so you need to change it accordingly.
 #agent.dump_env()
+TZ = data.get("TZ", "${TZ}") 
+SKIP_UNBOUND_HEALTHCHECK = data.get("SKIP_UNBOUND_HEALTHCHECK", "${SKIP_UNBOUND_HEALTHCHECK:-n}") 
+ 
+unbound-mailcow = { 
+ "TZ" : TZ ,
+ "SKIP_UNBOUND_HEALTHCHECK" : SKIP_UNBOUND_HEALTHCHECK ,
+} 
+agent.write_envfile("unbound-mailcow.env", unbound-mailcow) 
