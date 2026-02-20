@@ -1,0 +1,32 @@
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman  netfilter-mailcow-app.service
+BindsTo=mailcow.service
+After=mailcow.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/smarthost.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/mkdir -p tmp
+ExecStartPre=/bin/rm -f %t/netfilter-mailcow-app.pid %t/netfilter-mailcow-app.ctr-id
+ExecStartPre=-runagent discover-smarthost
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/netfilter-mailcow-app.pid  --cidfile %t/netfilter-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  netfilter-mailcow-app   \
+    --volume lib-modules:/lib/modules:ro:Z   \
+    --env-file netfilter-mailcow.env  ${NETFILTER_IMAGE}  
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/netfilter-mailcow-app.ctr-id -t 10
+ExecReload=/usr/bin/podman kill -s HUP netfilter-mailcow-app
+SyslogIdentifier=%u
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/netfilter-mailcow-app.ctr-id
+PIDFile=%t/netfilter-mailcow-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target
