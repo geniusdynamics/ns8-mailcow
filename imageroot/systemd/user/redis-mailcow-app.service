@@ -1,0 +1,33 @@
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman  redis-mailcow-app.service
+BindsTo=mailcow.service
+After=mailcow.service netfilter-mailcow-app.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/smarthost.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/mkdir -p tmp
+ExecStartPre=/bin/rm -f %t/redis-mailcow-app.pid %t/redis-mailcow-app.ctr-id
+ExecStartPre=-runagent discover-smarthost
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/redis-mailcow-app.pid  --cidfile %t/redis-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  redis-mailcow-app   \
+    --volume redis-vol-1:/data/:Z \
+    --volume conf-redis-redis-confsh:/redis-conf.sh:z:Z   \
+    --env-file redis-mailcow.env  ${REDIS_IMAGE}  
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/redis-mailcow-app.ctr-id -t 10
+ExecReload=/usr/bin/podman kill -s HUP redis-mailcow-app
+SyslogIdentifier=%u
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/redis-mailcow-app.ctr-id
+PIDFile=%t/redis-mailcow-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target
