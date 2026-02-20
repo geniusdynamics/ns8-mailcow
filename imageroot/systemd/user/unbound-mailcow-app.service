@@ -1,0 +1,33 @@
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman  unbound-mailcow-app.service
+BindsTo=mailcow.service
+After=mailcow.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/smarthost.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/mkdir -p tmp
+ExecStartPre=/bin/rm -f %t/unbound-mailcow-app.pid %t/unbound-mailcow-app.ctr-id
+ExecStartPre=-runagent discover-smarthost
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/unbound-mailcow-app.pid  --cidfile %t/unbound-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  unbound-mailcow-app   \
+    --volume hooks-unbound:/hooks:Z:Z \
+    --volume conf-unbound-unboundconf:/etc/unbound/unbound.conf:ro,Z:Z   \
+    --env-file unbound-mailcow.env  ${UNBOUND_IMAGE}  
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/unbound-mailcow-app.ctr-id -t 10
+ExecReload=/usr/bin/podman kill -s HUP unbound-mailcow-app
+SyslogIdentifier=%u
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/unbound-mailcow-app.ctr-id
+PIDFile=%t/unbound-mailcow-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target
