@@ -235,3 +235,9 @@ postfix-mailcow = {
  "TZ" : TZ ,
 } 
 agent.write_envfile("postfix-mailcow.env", postfix-mailcow) 
+TZ = data.get("TZ", "${TZ}") 
+ 
+memcached-mailcow = { 
+ "TZ" : TZ ,
+} 
+agent.write_envfile("memcached-mailcow.env", memcached-mailcow) 
