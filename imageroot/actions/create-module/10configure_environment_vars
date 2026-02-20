@@ -26,3 +26,19 @@ def generate_random_password(length):
 
 # just before starting systemd unit
 # agent.dump_env()
+MYSQL_INITDB_SKIP_TZINFO = data.get("MYSQL_INITDB_SKIP_TZINFO", "1") 
+TZ = data.get("TZ", "${TZ}") 
+MYSQL_ROOT_PASSWORD = data.get("MYSQL_ROOT_PASSWORD", "${DBROOT}") 
+MYSQL_DATABASE = data.get("MYSQL_DATABASE", "${DBNAME}") 
+MYSQL_USER = data.get("MYSQL_USER", "${DBUSER}") 
+MYSQL_PASSWORD = data.get("MYSQL_PASSWORD", "${DBPASS}") 
+ 
+mysql-mailcow = { 
+ "MYSQL_INITDB_SKIP_TZINFO" : MYSQL_INITDB_SKIP_TZINFO ,
+ "TZ" : TZ ,
+ "MYSQL_ROOT_PASSWORD" : MYSQL_ROOT_PASSWORD ,
+ "MYSQL_DATABASE" : MYSQL_DATABASE ,
+ "MYSQL_USER" : MYSQL_USER ,
+ "MYSQL_PASSWORD" : MYSQL_PASSWORD ,
+} 
+agent.write_envfile("mysql-mailcow.env", mysql-mailcow) 
