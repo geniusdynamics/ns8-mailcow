@@ -121,3 +121,19 @@ dovecot-mailcow = {
  "IPV4_NETWORK" : IPV4_NETWORK ,
 } 
 agent.write_envfile("dovecot-mailcow.env", dovecot-mailcow) 
+LOG_LINES = data.get("LOG_LINES", "${LOG_LINES:-9999}") 
+TZ = data.get("TZ", "${TZ}") 
+REDIS_SLAVEOF_IP = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
+REDIS_SLAVEOF_PORT = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
+REDISPASS = data.get("REDISPASS", "${REDISPASS}") 
+DEV_MODE = data.get("DEV_MODE", "${DEV_MODE:-n}") 
+ 
+postfix-tlspol-mailcow = { 
+ "LOG_LINES" : LOG_LINES ,
+ "TZ" : TZ ,
+ "REDIS_SLAVEOF_IP" : REDIS_SLAVEOF_IP ,
+ "REDIS_SLAVEOF_PORT" : REDIS_SLAVEOF_PORT ,
+ "REDISPASS" : REDISPASS ,
+ "DEV_MODE" : DEV_MODE ,
+} 
+agent.write_envfile("postfix-tlspol-mailcow.env", postfix-tlspol-mailcow) 
