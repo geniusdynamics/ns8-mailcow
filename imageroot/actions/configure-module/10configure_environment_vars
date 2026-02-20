@@ -445,3 +445,11 @@ rspamd-mailcow = {
  "SPAMHAUS_DQS_KEY" : SPAMHAUS_DQS_KEY ,
 } 
 agent.write_envfile("rspamd-mailcow.env", rspamd-mailcow) 
+TZ = data.get("TZ", "${TZ}") 
+COMPOSE_PROJECT_NAME = data.get("COMPOSE_PROJECT_NAME", "${COMPOSE_PROJECT_NAME}") 
+ 
+ofelia-mailcow = { 
+ "TZ" : TZ ,
+ "COMPOSE_PROJECT_NAME" : COMPOSE_PROJECT_NAME ,
+} 
+agent.write_envfile("ofelia-mailcow.env", ofelia-mailcow) 
