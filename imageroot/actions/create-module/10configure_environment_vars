@@ -41,3 +41,8 @@ mysql_mailcow = {
     "MYSQL_PASSWORD": MYSQL_PASSWORD,
 }
 agent.write_envfile("mysql-mailcow.env", mysql_mailcow)
+REDISPASS = generate_random_password(16)
+REDISMASTERPASS = generate_random_password(16)
+redis = {"REDISPASS": REDISPASS, "REDISMASTERPASS": REDISMASTERPASS}
+
+agent.write_envfile("redis.env", redis)

@@ -6,20 +6,46 @@
 #
 
 import json
+import os
 import sys
 import agent
 
 data = json.load(sys.stdin)
 
-TZ = data.get("TZ", "${TZ}")
-SKIP_CLAMD = data.get("SKIP_CLAMD", "${SKIP_CLAMD:-n}")
-DBNAME = data.get("DBNAME", "${DBNAME}")
+
+def generate_random_password(length):
+    random_bytes = os.urandom(length)
+    password = random_bytes.hex()
+    return password[:length]
+
+
+# Read Redis Config
+if os.path.exists("redis.env"):
+    dt = agent.read_envfile("redis.env")
+    REDISPASS = dt["REDISPASS"]
+    REDISMASTERPASS = dt["REDISMASTERPASS"]
+else:
+    REDISPASS = generate_random_password(16)
+    REDISMASTERPASS = generate_random_password(16)
+
+if os.path.exists("mysql-mailcow.env"):
+    dbt = agent.read_envfile("mysql-mailcow.env")
+    DBNAME = dbt["MYSQL_DATABASE"]
+    DBUSER = dbt["MYSQL_USER"]
+    DBPASS = dbt["MYSQL_PASSWORD"]
+else:
+    DBPASS = generate_random_password(16)
+    DBUSER = "mailcow"
+    DBNAME = "mailcow"
+
+
+TZ = data.get("TZ", "UTC")
+SKIP_CLAMD = data.get("SKIP_CLAMD", "n")
 LOG_LINES = data.get("LOG_LINES", "${LOG_LINES:-9999}")
 MAILCOW_PASS_SCHEME = data.get(
     "MAILCOW_PASS_SCHEME", "${MAILCOW_PASS_SCHEME:-BLF-CRYPT}"
 )
 MASTER = data.get("MASTER", "${MASTER:-y}")
-DBPASS = data.get("DBPASS", "${DBPASS}")
 MAILCOW_HOSTNAME = data.get("MAILCOW_HOSTNAME", "${MAILCOW_HOSTNAME}")
 SKIP_SOGO = data.get("SKIP_SOGO", "${SKIP_SOGO:-n}")
 REDIS_SLAVEOF_PORT = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}")
@@ -27,8 +53,6 @@ ACL_ANYONE = data.get("ACL_ANYONE", "${ACL_ANYONE:-disallow}")
 ALLOW_ADMIN_EMAIL_LOGIN = data.get(
     "ALLOW_ADMIN_EMAIL_LOGIN", "${ALLOW_ADMIN_EMAIL_LOGIN:-n}"
 )
-REDISPASS = data.get("REDISPASS", "${REDISPASS}")
-DBUSER = data.get("DBUSER", "${DBUSER}")
 IPV4_NETWORK = data.get("IPV4_NETWORK", "${IPV4_NETWORK:-172.22.1}")
 REDIS_SLAVEOF_IP = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}")
 SKIP_FTS = data.get("SKIP_FTS", "${SKIP_FTS:-y}")
@@ -49,9 +73,7 @@ SPAMHAUS_DQS_KEY = data.get("SPAMHAUS_DQS_KEY", "${SPAMHAUS_DQS_KEY:-}")
 SNAT_TO_SOURCE = data.get("SNAT_TO_SOURCE", "${SNAT_TO_SOURCE:-n}")
 SNAT6_TO_SOURCE = data.get("SNAT6_TO_SOURCE", "${SNAT6_TO_SOURCE:-n}")
 
-SKIP_UNBOUND_HEALTHCHECK = data.get(
-    "SKIP_UNBOUND_HEALTHCHECK", "${SKIP_UNBOUND_HEALTHCHECK:-n}"
-)
+SKIP_UNBOUND_HEALTHCHECK = data.get("SKIP_UNBOUND_HEALTHCHECK", "n")
 unbound_mailcow = {
     "SKIP_UNBOUND_HEALTHCHECK": SKIP_UNBOUND_HEALTHCHECK,
     "TZ": TZ,
@@ -371,7 +393,6 @@ watchdog_mailcow = {
 }
 agent.write_envfile("watchdog-mailcow.env", watchdog_mailcow)
 
-REDISMASTERPASS = data.get("REDISMASTERPASS", "${REDISMASTERPASS:-}")
 redis_mailcow = {
     "REDISMASTERPASS": REDISMASTERPASS,
     "REDISPASS": REDISPASS,
