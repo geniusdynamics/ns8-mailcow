@@ -20,7 +20,6 @@ host = data.get("host")
 h2hs = data.get("http2https", True)
 le = data.get("lets_encrypt", False)
 
-# Talk with agent using file descriptor.
 # Setup configuration from user input.
 agent.set_env("TRAEFIK_HOST", host)
 agent.set_env("TRAEFIK_HTTP2HTTPS", h2hs)

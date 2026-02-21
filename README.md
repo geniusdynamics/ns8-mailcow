@@ -1,7 +1,6 @@
 # ns8-mailcow
 
-This is a template module for [NethServer 8](https://github.com/NethServer/ns8-core).
-To start a new module from it:
+Mail server module for [NethServer 8](https://github.com/NethServer/ns8-core) based on [mailcow-dockerized](https://mailcow.email/).
 
 ## Install
 
@@ -16,8 +15,6 @@ Output example:
 
 ## Configure
 
-Let's assume that the mattermost instance is named `mailcow1`.
-
 Launch `configure-module`, by setting the following parameters:
 
 - `host`: a fully qualified domain name for the application
@@ -31,7 +28,7 @@ api-cli run configure-module --agent module/mailcow1 --data - <<EOF
 {
   "host": "mailcow.domain.com",
   "http2https": true,
-  "lets_encrypt": false
+  "lets_encrypt": true
 }
 EOF
 ```
@@ -39,11 +36,92 @@ EOF
 The above command will:
 
 - start and configure the mailcow instance
-- configure a virtual host for trafik to access the instance
+- configure a virtual host for traefik to access the instance
+
+## Advanced Settings
+
+The module supports extensive advanced configuration options accessible through the web UI:
+
+### Time Settings
+- Timezone (TZ)
+
+### Network Settings
+- IPv4 Network (default: 172.22.1)
+- IPv6 Network (default: fd4d:6169:6c63:6f77::/64)
+- Enable IPv6
+
+### Service Skipping
+- Skip SOGo (webmail)
+- Skip ClamAV (antivirus)
+- Skip Rspamd (spam filter)
+- Skip Let's Encrypt
+- Skip Full-Text Search (FTS)
+- Skip OLEFY (Office document scanning)
+
+### Ports Configuration
+- HTTP Port (default: 80)
+- HTTPS Port (default: 443)
+- SMTP Port (default: 25)
+- SMTPS Port (default: 465)
+- Submission Port (default: 587)
+- IMAP Port (default: 143)
+- IMAPS Port (default: 993)
+- POP Port (default: 110)
+- POPS Port (default: 995)
+- Sieve Port (default: 4190)
+
+### Security Settings
+- Password Scheme (BLF-CRYPT, ARGON2, SHA512, SHA256, MD5)
+- Master Account
+- Allow Admin Email Login
+- ACL Anyone
+
+### Logging
+- Log Lines
+- Developer Mode
+
+### SOGo Settings
+- SOGo Session Expiry (minutes)
+
+### Dovecot Settings
+- Maildir Garbage Collection Time
+- Maildir Subfolders
+- FTS Processes
+- FTS Heap Size
+
+### ACME Settings
+- Additional SAN
+- Let's Encrypt Staging
+- Skip IP Check
+- Only Mailcow Hostname
+- Directory URL
+
+### Netfilter Settings
+- Disable Isolation Rule
+- Mailcow Replica IP
+
+## Exposed Ports
+
+The following ports are exposed on 127.0.0.1 for mail services:
+
+| Service | Port |
+|---------|------|
+| HTTP (web UI) | 80 |
+| HTTPS (web UI) | 443 |
+| SMTP | 25 |
+| SMTPS | 465 |
+| Submission | 587 |
+| IMAP | 143 |
+| IMAPS | 993 |
+| POP3 | 110 |
+| POP3S | 995 |
+| Sieve | 4190 |
+
+The web UI is accessible via Traefik using the configured hostname. Mail services are exposed directly on localhost for external mail server communication.
 
 ## Get the configuration
 
-You can retrieve the configuration with
+You can retrieve the configuration with:
 
 ```
 api-cli run get-configuration --agent module/mailcow1

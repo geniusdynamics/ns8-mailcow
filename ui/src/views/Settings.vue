@@ -61,12 +61,16 @@
             <cv-accordion ref="accordion" class="maxwidth mg-bottom">
               <!-- Time Settings -->
               <cv-accordion-item :open="toggleAccordion[0]">
-                <template slot="title">{{ $t("settings.time_settings") }}</template>
+                <template slot="title">{{
+                  $t("settings.time_settings")
+                }}</template>
                 <template slot="content">
                   <cv-text-input
                     :label="$t('settings.timezone')"
                     v-model.trim="TZ"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                   </cv-text-input>
@@ -74,12 +78,16 @@
               </cv-accordion-item>
               <!-- Network Settings -->
               <cv-accordion-item :open="toggleAccordion[1]">
-                <template slot="title">{{ $t("settings.network_settings") }}</template>
+                <template slot="title">{{
+                  $t("settings.network_settings")
+                }}</template>
                 <template slot="content">
                   <cv-text-input
                     :label="$t('settings.ipv4_network')"
                     v-model.trim="IPV4_NETWORK"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     placeholder="172.22.1"
                   >
@@ -87,7 +95,9 @@
                   <cv-text-input
                     :label="$t('settings.ipv6_network')"
                     v-model.trim="IPV6_NETWORK"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     placeholder="fd4d:6169:6c63:6f77::/64"
                   >
@@ -96,7 +106,9 @@
                     :value="ENABLE_IPV6"
                     :label="$t('settings.enable_ipv6')"
                     v-model="isEnableIpv6"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -110,13 +122,17 @@
               </cv-accordion-item>
               <!-- Service Skipping -->
               <cv-accordion-item :open="toggleAccordion[2]">
-                <template slot="title">{{ $t("settings.service_skipping") }}</template>
+                <template slot="title">{{
+                  $t("settings.service_skipping")
+                }}</template>
                 <template slot="content">
                   <cv-toggle
                     :value="SKIP_SOGO"
                     :label="$t('settings.skip_sogo')"
                     v-model="isSkipSogo"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -130,7 +146,9 @@
                     :value="SKIP_CLAMD"
                     :label="$t('settings.skip_clamd')"
                     v-model="isSkipClamd"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -144,7 +162,9 @@
                     :value="SKIP_RSPAMD"
                     :label="$t('settings.skip_rspamd')"
                     v-model="isSkipRspamd"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -158,7 +178,9 @@
                     :value="SKIP_LETS_ENCRYPT"
                     :label="$t('settings.skip_lets_encrypt')"
                     v-model="isSkipLetsEncrypt"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -172,7 +194,9 @@
                     :value="SKIP_FTS"
                     :label="$t('settings.skip_fts')"
                     v-model="isSkipFts"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -186,7 +210,9 @@
                     :value="SKIP_OLEFY"
                     :label="$t('settings.skip_olefy')"
                     v-model="isSkipOlefy"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -200,12 +226,16 @@
               </cv-accordion-item>
               <!-- Ports Configuration -->
               <cv-accordion-item :open="toggleAccordion[3]">
-                <template slot="title">{{ $t("settings.ports_configuration") }}</template>
+                <template slot="title">{{
+                  $t("settings.ports_configuration")
+                }}</template>
                 <template slot="content">
                   <cv-text-input
                     :label="$t('settings.http_port')"
                     v-model.number="HTTP_PORT"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -213,7 +243,9 @@
                   <cv-text-input
                     :label="$t('settings.https_port')"
                     v-model.number="HTTPS_PORT"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -221,7 +253,9 @@
                   <cv-text-input
                     :label="$t('settings.smtp_port')"
                     v-model.number="SMTP_PORT"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -229,7 +263,9 @@
                   <cv-text-input
                     :label="$t('settings.smtps_port')"
                     v-model.number="SMTPS_PORT"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -237,7 +273,9 @@
                   <cv-text-input
                     :label="$t('settings.submission_port')"
                     v-model.number="SUBMISSION_PORT"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -245,7 +283,9 @@
                   <cv-text-input
                     :label="$t('settings.imap_port')"
                     v-model.number="IMAP_PORT"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -253,7 +293,9 @@
                   <cv-text-input
                     :label="$t('settings.imaps_port')"
                     v-model.number="IMAPS_PORT"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -261,7 +303,9 @@
                   <cv-text-input
                     :label="$t('settings.pop_port')"
                     v-model.number="POP_PORT"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -269,7 +313,9 @@
                   <cv-text-input
                     :label="$t('settings.pops_port')"
                     v-model.number="POPS_PORT"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -277,7 +323,9 @@
                   <cv-text-input
                     :label="$t('settings.sieve_port')"
                     v-model.number="SIEVE_PORT"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -286,15 +334,21 @@
               </cv-accordion-item>
               <!-- Security Settings -->
               <cv-accordion-item :open="toggleAccordion[4]">
-                <template slot="title">{{ $t("settings.security_settings") }}</template>
+                <template slot="title">{{
+                  $t("settings.security_settings")
+                }}</template>
                 <template slot="content">
                   <cv-select
                     :label="$t('settings.mailcow_pass_scheme')"
                     v-model="MAILCOW_PASS_SCHEME"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
-                    <cv-select-option value="BLF-CRYPT">BLF-CRYPT</cv-select-option>
+                    <cv-select-option value="BLF-CRYPT"
+                      >BLF-CRYPT</cv-select-option
+                    >
                     <cv-select-option value="ARGON2">ARGON2</cv-select-option>
                     <cv-select-option value="SHA512">SHA512</cv-select-option>
                     <cv-select-option value="SHA256">SHA256</cv-select-option>
@@ -304,7 +358,9 @@
                     :value="MASTER"
                     :label="$t('settings.master')"
                     v-model="isMaster"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -318,7 +374,9 @@
                     :value="ALLOW_ADMIN_EMAIL_LOGIN"
                     :label="$t('settings.allow_admin_email_login')"
                     v-model="isAllowAdminEmailLogin"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -331,10 +389,14 @@
                   <cv-select
                     :label="$t('settings.acl_anyone')"
                     v-model="ACL_ANYONE"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
-                    <cv-select-option value="disallow">disallow</cv-select-option>
+                    <cv-select-option value="disallow"
+                      >disallow</cv-select-option
+                    >
                     <cv-select-option value="allow">allow</cv-select-option>
                   </cv-select>
                 </template>
@@ -346,7 +408,9 @@
                   <cv-text-input
                     :label="$t('settings.log_lines')"
                     v-model.number="LOG_LINES"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -355,7 +419,9 @@
                     :value="DEV_MODE"
                     :label="$t('settings.dev_mode')"
                     v-model="isDevMode"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -369,12 +435,16 @@
               </cv-accordion-item>
               <!-- SOGo Settings -->
               <cv-accordion-item :open="toggleAccordion[6]">
-                <template slot="title">{{ $t("settings.sogo_settings") }}</template>
+                <template slot="title">{{
+                  $t("settings.sogo_settings")
+                }}</template>
                 <template slot="content">
                   <cv-text-input
                     :label="$t('settings.sogo_expire_session')"
                     v-model.number="SOGO_EXPIRE_SESSION"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -383,12 +453,16 @@
               </cv-accordion-item>
               <!-- Dovecot Settings -->
               <cv-accordion-item :open="toggleAccordion[7]">
-                <template slot="title">{{ $t("settings.dovecot_settings") }}</template>
+                <template slot="title">{{
+                  $t("settings.dovecot_settings")
+                }}</template>
                 <template slot="content">
                   <cv-text-input
                     :label="$t('settings.maildir_gc_time')"
                     v-model.number="MAILDIR_GC_TIME"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -396,14 +470,18 @@
                   <cv-text-input
                     :label="$t('settings.maildir_sub')"
                     v-model.trim="MAILDIR_SUB"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                   </cv-text-input>
                   <cv-text-input
                     :label="$t('settings.fts_procs')"
                     v-model.number="FTS_PROCS"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -411,7 +489,9 @@
                   <cv-text-input
                     :label="$t('settings.fts_heap')"
                     v-model.number="FTS_HEAP"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                     type="number"
                   >
@@ -420,12 +500,16 @@
               </cv-accordion-item>
               <!-- ACME Settings -->
               <cv-accordion-item :open="toggleAccordion[8]">
-                <template slot="title">{{ $t("settings.acme_settings") }}</template>
+                <template slot="title">{{
+                  $t("settings.acme_settings")
+                }}</template>
                 <template slot="content">
                   <cv-text-input
                     :label="$t('settings.additional_san')"
                     v-model.trim="ADDITIONAL_SAN"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                   </cv-text-input>
@@ -433,7 +517,9 @@
                     :value="LE_STAGING"
                     :label="$t('settings.le_staging')"
                     v-model="isLeStaging"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -447,7 +533,9 @@
                     :value="SKIP_IP_CHECK"
                     :label="$t('settings.skip_ip_check')"
                     v-model="isSkipIpCheck"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -461,7 +549,9 @@
                     :value="ONLY_MAILCOW_HOSTNAME"
                     :label="$t('settings.only_mailcow_hostname')"
                     v-model="isOnlyMailcowHostname"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -474,7 +564,9 @@
                   <cv-text-input
                     :label="$t('settings.directory_url')"
                     v-model.trim="DIRECTORY_URL"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                   </cv-text-input>
@@ -482,13 +574,17 @@
               </cv-accordion-item>
               <!-- Netfilter Settings -->
               <cv-accordion-item :open="toggleAccordion[9]">
-                <template slot="title">{{ $t("settings.netfilter_settings") }}</template>
+                <template slot="title">{{
+                  $t("settings.netfilter_settings")
+                }}</template>
                 <template slot="content">
                   <cv-toggle
                     :value="DISABLE_NETFILTER_ISOLATION_RULE"
                     :label="$t('settings.disable_netfilter_isolation_rule')"
                     v-model="isDisableNetfilterIsolationRule"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                     <template slot="text-left">{{
@@ -501,7 +597,9 @@
                   <cv-text-input
                     :label="$t('settings.mailcow_replica_ip')"
                     v-model.trim="MAILCOW_REPLICA_IP"
-                    :disabled="loading.getConfiguration || loading.configureModule"
+                    :disabled="
+                      loading.getConfiguration || loading.configureModule
+                    "
                     class="mg-bottom"
                   >
                   </cv-text-input>
@@ -575,7 +673,18 @@ export default {
         lets_encrypt: "",
         http2https: "",
       },
-      toggleAccordion: [false, false, false, false, false, false, false, false, false, false],
+      toggleAccordion: [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+      ],
       // Time Settings
       TZ: "UTC",
       // Network Settings
@@ -652,13 +761,13 @@ export default {
       // register to task error
       this.core.$root.$once(
         `${taskAction}-aborted-${eventId}`,
-        this.getConfigurationAborted
+        this.getConfigurationAborted,
       );
 
       // register to task completion
       this.core.$root.$once(
         `${taskAction}-completed-${eventId}`,
-        this.getConfigurationCompleted
+        this.getConfigurationCompleted,
       );
 
       const res = await to(
@@ -669,7 +778,7 @@ export default {
             isNotificationHidden: true,
             eventId,
           },
-        })
+        }),
       );
       const err = res[0];
 
@@ -736,7 +845,8 @@ export default {
       this.isOnlyMailcowHostname = config.ONLY_MAILCOW_HOSTNAME === "y";
       this.DIRECTORY_URL = config.DIRECTORY_URL || "";
       // Netfilter
-      this.isDisableNetfilterIsolationRule = config.DISABLE_NETFILTER_ISOLATION_RULE === "y";
+      this.isDisableNetfilterIsolationRule =
+        config.DISABLE_NETFILTER_ISOLATION_RULE === "y";
       this.MAILCOW_REPLICA_IP = config.MAILCOW_REPLICA_IP || "";
 
       this.loading.getConfiguration = false;
@@ -786,19 +896,19 @@ export default {
       // register to task error
       this.core.$root.$once(
         `${taskAction}-aborted-${eventId}`,
-        this.configureModuleAborted
+        this.configureModuleAborted,
       );
 
       // register to task validation
       this.core.$root.$once(
         `${taskAction}-validation-failed-${eventId}`,
-        this.configureModuleValidationFailed
+        this.configureModuleValidationFailed,
       );
 
       // register to task completion
       this.core.$root.$once(
         `${taskAction}-completed-${eventId}`,
-        this.configureModuleCompleted
+        this.configureModuleCompleted,
       );
       const res = await to(
         this.createModuleTaskForApp(this.instanceName, {
@@ -853,7 +963,10 @@ export default {
             ONLY_MAILCOW_HOSTNAME: this.isOnlyMailcowHostname ? "y" : "n",
             DIRECTORY_URL: this.DIRECTORY_URL,
             // Netfilter
-            DISABLE_NETFILTER_ISOLATION_RULE: this.isDisableNetfilterIsolationRule ? "y" : "n",
+            DISABLE_NETFILTER_ISOLATION_RULE: this
+              .isDisableNetfilterIsolationRule
+              ? "y"
+              : "n",
             MAILCOW_REPLICA_IP: this.MAILCOW_REPLICA_IP,
           },
           extra: {
@@ -863,7 +976,7 @@ export default {
             description: this.$t("settings.configuring"),
             eventId,
           },
-        })
+        }),
       );
       const err = res[0];
 
