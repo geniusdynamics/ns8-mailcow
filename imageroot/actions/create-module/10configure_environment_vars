@@ -23,7 +23,6 @@ def generate_random_password(length):
     return password[:length]
 
 
-# just before starting systemd unit
 # agent.dump_env()
 MYSQL_INITDB_SKIP_TZINFO = data.get("MYSQL_INITDB_SKIP_TZINFO", "1")
 TZ = data.get("TZ", "UTC")

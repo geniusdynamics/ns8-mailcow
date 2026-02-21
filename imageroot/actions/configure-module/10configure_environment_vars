@@ -25,8 +25,8 @@ if os.path.exists("redis.env"):
     REDISPASS = dt["REDISPASS"]
     REDISMASTERPASS = dt["REDISMASTERPASS"]
 else:
-    REDISPASS = generate_random_password(16)
-    REDISMASTERPASS = generate_random_password(16)
+    REDISPASS = generate_random_password(32)
+    REDISMASTERPASS = generate_random_password(32)
 
 if os.path.exists("mysql-mailcow.env"):
     dbt = agent.read_envfile("mysql-mailcow.env")
@@ -34,44 +34,40 @@ if os.path.exists("mysql-mailcow.env"):
     DBUSER = dbt["MYSQL_USER"]
     DBPASS = dbt["MYSQL_PASSWORD"]
 else:
-    DBPASS = generate_random_password(16)
+    DBPASS = generate_random_password(32)
     DBUSER = "mailcow"
     DBNAME = "mailcow"
 
+if os.path.exists("dockerapi-mailcow.env"):
+    dapit = agent.read_envfile("dockerapi-mailcow.env")
+    DBROOT = dapit["DBROOT"]
+else:
+    DBROOT = generate_random_password(32)
 
 TZ = data.get("TZ", "UTC")
 SKIP_CLAMD = data.get("SKIP_CLAMD", "n")
-LOG_LINES = data.get("LOG_LINES", "${LOG_LINES:-9999}")
-MAILCOW_PASS_SCHEME = data.get(
-    "MAILCOW_PASS_SCHEME", "${MAILCOW_PASS_SCHEME:-BLF-CRYPT}"
-)
-MASTER = data.get("MASTER", "${MASTER:-y}")
-MAILCOW_HOSTNAME = data.get("MAILCOW_HOSTNAME", "${MAILCOW_HOSTNAME}")
-SKIP_SOGO = data.get("SKIP_SOGO", "${SKIP_SOGO:-n}")
-REDIS_SLAVEOF_PORT = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}")
-ACL_ANYONE = data.get("ACL_ANYONE", "${ACL_ANYONE:-disallow}")
-ALLOW_ADMIN_EMAIL_LOGIN = data.get(
-    "ALLOW_ADMIN_EMAIL_LOGIN", "${ALLOW_ADMIN_EMAIL_LOGIN:-n}"
-)
-IPV4_NETWORK = data.get("IPV4_NETWORK", "${IPV4_NETWORK:-172.22.1}")
-REDIS_SLAVEOF_IP = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}")
-SKIP_FTS = data.get("SKIP_FTS", "${SKIP_FTS:-y}")
-MAILCOW_REPLICA_IP = data.get("MAILCOW_REPLICA_IP", "${MAILCOW_REPLICA_IP:-}")
-COMPOSE_PROJECT_NAME = data.get(
-    "COMPOSE_PROJECT_NAME", "${COMPOSE_PROJECT_NAME:-mailcow-dockerized}"
-)
-DEV_MODE = data.get("DEV_MODE", "${DEV_MODE:-n}")
-SKIP_OLEFY = data.get("SKIP_OLEFY", "${SKIP_OLEFY:-n}")
-DBROOT = data.get("DBROOT", "${DBROOT}")
-IPV6_NETWORK = data.get("IPV6_NETWORK", "${IPV6_NETWORK:-fd4d:6169:6c63:6f77::/64}")
-SKIP_LETS_ENCRYPT = data.get("SKIP_LETS_ENCRYPT", "${SKIP_LETS_ENCRYPT:-n}")
-HTTPS_PORT = data.get("HTTPS_PORT", "${HTTPS_PORT:-443}")
-ADDITIONAL_SERVER_NAMES = data.get(
-    "ADDITIONAL_SERVER_NAMES", "${ADDITIONAL_SERVER_NAMES:-}"
-)
-SPAMHAUS_DQS_KEY = data.get("SPAMHAUS_DQS_KEY", "${SPAMHAUS_DQS_KEY:-}")
-SNAT_TO_SOURCE = data.get("SNAT_TO_SOURCE", "${SNAT_TO_SOURCE:-n}")
-SNAT6_TO_SOURCE = data.get("SNAT6_TO_SOURCE", "${SNAT6_TO_SOURCE:-n}")
+LOG_LINES = data.get("LOG_LINES", "9999")
+MAILCOW_PASS_SCHEME = data.get("MAILCOW_PASS_SCHEME", "BLF-CRYPT")
+MASTER = data.get("MASTER", "y")
+MAILCOW_HOSTNAME = data.get("host", "")
+SKIP_SOGO = data.get("SKIP_SOGO", "n")
+REDIS_SLAVEOF_PORT = data.get("REDIS_SLAVEOF_PORT", "")
+ACL_ANYONE = data.get("ACL_ANYONE", "disallow")
+ALLOW_ADMIN_EMAIL_LOGIN = data.get("ALLOW_ADMIN_EMAIL_LOGIN", "n")
+IPV4_NETWORK = data.get("IPV4_NETWORK", "172.22.1")
+REDIS_SLAVEOF_IP = data.get("REDIS_SLAVEOF_IP", "")
+SKIP_FTS = data.get("SKIP_FTS", "y")
+MAILCOW_REPLICA_IP = data.get("MAILCOW_REPLICA_IP", "")
+COMPOSE_PROJECT_NAME = data.get("COMPOSE_PROJECT_NAME", "mailcow-dockerized")
+DEV_MODE = data.get("DEV_MODE", "n")
+SKIP_OLEFY = data.get("SKIP_OLEFY", "n")
+IPV6_NETWORK = data.get("IPV6_NETWORK", "fd4d:6169:6c63:6f77::/64")
+SKIP_LETS_ENCRYPT = data.get("SKIP_LETS_ENCRYPT", "n")
+HTTPS_PORT = data.get("HTTPS_PORT", "443")
+ADDITIONAL_SERVER_NAMES = data.get("ADDITIONAL_SERVER_NAMES", "")
+SPAMHAUS_DQS_KEY = data.get("SPAMHAUS_DQS_KEY", "")
+SNAT_TO_SOURCE = data.get("SNAT_TO_SOURCE", "n")
+SNAT6_TO_SOURCE = data.get("SNAT6_TO_SOURCE", "n")
 
 SKIP_UNBOUND_HEALTHCHECK = data.get("SKIP_UNBOUND_HEALTHCHECK", "n")
 unbound_mailcow = {
@@ -86,10 +82,12 @@ clamd_mailcow = {
 }
 agent.write_envfile("clamd-mailcow.env", clamd_mailcow)
 
-SOGO_URL_ENCRYPTION_KEY = data.get(
-    "SOGO_URL_ENCRYPTION_KEY", "${SOGO_URL_ENCRYPTION_KEY:-SOGoSuperSecret0}"
-)
-SOGO_EXPIRE_SESSION = data.get("SOGO_EXPIRE_SESSION", "${SOGO_EXPIRE_SESSION:-480}")
+if os.path.exists("sogo-mailcow.env"):
+    sogot = agent.read_envfile("sogo-mailcow.env")
+    SOGO_URL_ENCRYPTION_KEY = sogot["SOGO_URL_ENCRYPTION_KEY"]
+else:
+    SOGO_URL_ENCRYPTION_KEY = generate_random_password(64)
+SOGO_EXPIRE_SESSION = data.get("SOGO_EXPIRE_SESSION", "480")
 sogo_mailcow = {
     "SOGO_URL_ENCRYPTION_KEY": SOGO_URL_ENCRYPTION_KEY,
     "SOGO_EXPIRE_SESSION": SOGO_EXPIRE_SESSION,
@@ -111,13 +109,13 @@ sogo_mailcow = {
 }
 agent.write_envfile("sogo-mailcow.env", sogo_mailcow)
 
-MAILDIR_GC_TIME = data.get("MAILDIR_GC_TIME", "${MAILDIR_GC_TIME:-7200}")
-MAILDIR_SUB = data.get("MAILDIR_SUB", "${MAILDIR_SUB:-}")
-FTS_PROCS = data.get("FTS_PROCS", "${FTS_PROCS:-3}")
-FTS_HEAP = data.get("FTS_HEAP", "${FTS_HEAP:-512}")
-DOVECOT_MASTER_PASS = data.get("DOVECOT_MASTER_PASS", "${DOVECOT_MASTER_PASS:-}")
-DOVECOT_MASTER_USER = data.get("DOVECOT_MASTER_USER", "${DOVECOT_MASTER_USER:-}")
-DOVEADM_REPLICA_PORT = data.get("DOVEADM_REPLICA_PORT", "${DOVEADM_REPLICA_PORT:-}")
+MAILDIR_GC_TIME = data.get("MAILDIR_GC_TIME", "7200")
+MAILDIR_SUB = data.get("MAILDIR_SUB", "")
+FTS_PROCS = data.get("FTS_PROCS", "3")
+FTS_HEAP = data.get("FTS_HEAP", "512")
+DOVECOT_MASTER_PASS = data.get("DOVECOT_MASTER_PASS", "")
+DOVECOT_MASTER_USER = data.get("DOVECOT_MASTER_USER", "")
+DOVEADM_REPLICA_PORT = data.get("DOVEADM_REPLICA_PORT", "")
 dovecot_mailcow = {
     "MAILDIR_GC_TIME": MAILDIR_GC_TIME,
     "MAILDIR_SUB": MAILDIR_SUB,
@@ -156,18 +154,16 @@ postfix_tlspol_mailcow = {
 }
 agent.write_envfile("postfix-tlspol-mailcow.env", postfix_tlspol_mailcow)
 
-NGINX_USE_PROXY_PROTOCOL = data.get(
-    "NGINX_USE_PROXY_PROTOCOL", "${NGINX_USE_PROXY_PROTOCOL:-n}"
-)
-REDISHOST = data.get("REDISHOST", "${REDISHOST:-}")
-SOGOHOST = data.get("SOGOHOST", "${SOGOHOST:-}")
-PHPFPMHOST = data.get("PHPFPMHOST", "${PHPFPMHOST:-}")
-RSPAMDHOST = data.get("RSPAMDHOST", "${RSPAMDHOST:-}")
-TRUSTED_PROXIES = data.get("TRUSTED_PROXIES", "${TRUSTED_PROXIES:-}")
-HTTP_REDIRECT = data.get("HTTP_REDIRECT", "${HTTP_REDIRECT:-n}")
-HTTP_PORT = data.get("HTTP_PORT", "${HTTP_PORT:-80}")
-ENABLE_IPV6 = data.get("ENABLE_IPV6", "${ENABLE_IPV6:-true}")
-SKIP_RSPAMD = data.get("SKIP_RSPAMD", "${SKIP_RSPAMD:-n}")
+NGINX_USE_PROXY_PROTOCOL = data.get("NGINX_USE_PROXY_PROTOCOL", "n")
+REDISHOST = "redis-mailcow-app"
+SOGOHOST = "sogo-mailcow-app"
+PHPFPMHOST = "php-fpm-mailcow-app"
+RSPAMDHOST = data.get("RSPAMDHOST", "")
+TRUSTED_PROXIES = data.get("TRUSTED_PROXIES", "")
+HTTP_REDIRECT = data.get("HTTP_REDIRECT", "n")
+HTTP_PORT = data.get("HTTP_PORT", "80")
+ENABLE_IPV6 = data.get("ENABLE_IPV6", "true")
+SKIP_RSPAMD = data.get("SKIP_RSPAMD", "n")
 nginx_mailcow = {
     "NGINX_USE_PROXY_PROTOCOL": NGINX_USE_PROXY_PROTOCOL,
     "REDISHOST": REDISHOST,
@@ -238,16 +234,14 @@ memcached_mailcow = {
 }
 agent.write_envfile("memcached-mailcow.env", memcached_mailcow)
 
-ADDITIONAL_SAN = data.get("ADDITIONAL_SAN", "${ADDITIONAL_SAN}")
-DIRECTORY_URL = data.get("DIRECTORY_URL", "${DIRECTORY_URL:-}")
-AUTODISCOVER_SAN = data.get("AUTODISCOVER_SAN", "${AUTODISCOVER_SAN:-y}")
-ENABLE_SSL_SNI = data.get("ENABLE_SSL_SNI", "${ENABLE_SSL_SNI:-n}")
-SKIP_IP_CHECK = data.get("SKIP_IP_CHECK", "${SKIP_IP_CHECK:-n}")
-ONLY_MAILCOW_HOSTNAME = data.get("ONLY_MAILCOW_HOSTNAME", "${ONLY_MAILCOW_HOSTNAME:-n}")
-LE_STAGING = data.get("LE_STAGING", "${LE_STAGING:-n}")
-SKIP_HTTP_VERIFICATION = data.get(
-    "SKIP_HTTP_VERIFICATION", "${SKIP_HTTP_VERIFICATION:-n}"
-)
+ADDITIONAL_SAN = data.get("ADDITIONAL_SAN", "")
+DIRECTORY_URL = data.get("DIRECTORY_URL", "")
+AUTODISCOVER_SAN = data.get("AUTODISCOVER_SAN", "y")
+ENABLE_SSL_SNI = data.get("ENABLE_SSL_SNI", "n")
+SKIP_IP_CHECK = data.get("SKIP_IP_CHECK", "n")
+ONLY_MAILCOW_HOSTNAME = data.get("ONLY_MAILCOW_HOSTNAME", "n")
+LE_STAGING = data.get("LE_STAGING", "n")
+SKIP_HTTP_VERIFICATION = data.get("SKIP_HTTP_VERIFICATION", "n")
 acme_mailcow = {
     "ADDITIONAL_SAN": ADDITIONAL_SAN,
     "DIRECTORY_URL": DIRECTORY_URL,
@@ -273,9 +267,7 @@ acme_mailcow = {
 }
 agent.write_envfile("acme-mailcow.env", acme_mailcow)
 
-DISABLE_NETFILTER_ISOLATION_RULE = data.get(
-    "DISABLE_NETFILTER_ISOLATION_RULE", "${DISABLE_NETFILTER_ISOLATION_RULE:-n}"
-)
+DISABLE_NETFILTER_ISOLATION_RULE = data.get("DISABLE_NETFILTER_ISOLATION_RULE", "n")
 netfilter_mailcow = {
     "DISABLE_NETFILTER_ISOLATION_RULE": DISABLE_NETFILTER_ISOLATION_RULE,
     "MAILCOW_REPLICA_IP": MAILCOW_REPLICA_IP,
@@ -290,54 +282,38 @@ netfilter_mailcow = {
 }
 agent.write_envfile("netfilter-mailcow.env", netfilter_mailcow)
 
-USE_WATCHDOG = data.get("USE_WATCHDOG", "${USE_WATCHDOG:-n}")
-WATCHDOG_SUBJECT = data.get("WATCHDOG_SUBJECT", "${WATCHDOG_SUBJECT:-Watchdog ALERT}")
-WATCHDOG_NOTIFY_EMAIL = data.get("WATCHDOG_NOTIFY_EMAIL", "${WATCHDOG_NOTIFY_EMAIL:-}")
-WATCHDOG_NOTIFY_WEBHOOK = data.get(
-    "WATCHDOG_NOTIFY_WEBHOOK", "${WATCHDOG_NOTIFY_WEBHOOK:-}"
-)
-WATCHDOG_NOTIFY_WEBHOOK_BODY = data.get(
-    "WATCHDOG_NOTIFY_WEBHOOK_BODY", "${WATCHDOG_NOTIFY_WEBHOOK_BODY:-}"
-)
-WATCHDOG_NOTIFY_BAN = data.get("WATCHDOG_NOTIFY_BAN", "${WATCHDOG_NOTIFY_BAN:-y}")
-WATCHDOG_NOTIFY_START = data.get("WATCHDOG_NOTIFY_START", "${WATCHDOG_NOTIFY_START:-y}")
-WATCHDOG_VERBOSE = data.get("WATCHDOG_VERBOSE", "${WATCHDOG_VERBOSE:-n}")
-WATCHDOG_EXTERNAL_CHECKS = data.get(
-    "WATCHDOG_EXTERNAL_CHECKS", "${WATCHDOG_EXTERNAL_CHECKS:-n}"
-)
-WATCHDOG_MYSQL_REPLICATION_CHECKS = data.get(
-    "WATCHDOG_MYSQL_REPLICATION_CHECKS", "${WATCHDOG_MYSQL_REPLICATION_CHECKS:-n}"
-)
-IP_BY_DOCKER_API = data.get("IP_BY_DOCKER_API", "${IP_BY_DOCKER_API:-0}")
-CHECK_UNBOUND = data.get("CHECK_UNBOUND", "${CHECK_UNBOUND:-1}")
-MYSQL_REPLICATION_THRESHOLD = data.get(
-    "MYSQL_REPLICATION_THRESHOLD", "${MYSQL_REPLICATION_THRESHOLD:-1}"
-)
-RSPAMD_THRESHOLD = data.get("RSPAMD_THRESHOLD", "${RSPAMD_THRESHOLD:-5}")
-MAILQ_CRIT = data.get("MAILQ_CRIT", "${MAILQ_CRIT:-30}")
-POSTFIX_TLSPOL_THRESHOLD = data.get(
-    "POSTFIX_TLSPOL_THRESHOLD", "${POSTFIX_TLSPOL_THRESHOLD:-8}"
-)
-RATELIMIT_THRESHOLD = data.get("RATELIMIT_THRESHOLD", "${RATELIMIT_THRESHOLD:-1}")
-UNBOUND_THRESHOLD = data.get("UNBOUND_THRESHOLD", "${UNBOUND_THRESHOLD:-5}")
-MYSQL_THRESHOLD = data.get("MYSQL_THRESHOLD", "${MYSQL_THRESHOLD:-5}")
-CLAMD_THRESHOLD = data.get("CLAMD_THRESHOLD", "${CLAMD_THRESHOLD:-15}")
-DOVECOT_THRESHOLD = data.get("DOVECOT_THRESHOLD", "${DOVECOT_THRESHOLD:-12}")
-EXTERNAL_CHECKS_THRESHOLD = data.get(
-    "EXTERNAL_CHECKS_THRESHOLD", "${EXTERNAL_CHECKS_THRESHOLD:-1}"
-)
-SOGO_THRESHOLD = data.get("SOGO_THRESHOLD", "${SOGO_THRESHOLD:-3}")
-POSTFIX_THRESHOLD = data.get("POSTFIX_THRESHOLD", "${POSTFIX_THRESHOLD:-8}")
-DOVECOT_REPL_THRESHOLD = data.get(
-    "DOVECOT_REPL_THRESHOLD", "${DOVECOT_REPL_THRESHOLD:-20}"
-)
-FAIL2BAN_THRESHOLD = data.get("FAIL2BAN_THRESHOLD", "${FAIL2BAN_THRESHOLD:-1}")
-ACME_THRESHOLD = data.get("ACME_THRESHOLD", "${ACME_THRESHOLD:-1}")
-NGINX_THRESHOLD = data.get("NGINX_THRESHOLD", "${NGINX_THRESHOLD:-5}")
-PHPFPM_THRESHOLD = data.get("PHPFPM_THRESHOLD", "${PHPFPM_THRESHOLD:-5}")
-OLEFY_THRESHOLD = data.get("OLEFY_THRESHOLD", "${OLEFY_THRESHOLD:-5}")
-MAILQ_THRESHOLD = data.get("MAILQ_THRESHOLD", "${MAILQ_THRESHOLD:-20}")
-REDIS_THRESHOLD = data.get("REDIS_THRESHOLD", "${REDIS_THRESHOLD:-5}")
+USE_WATCHDOG = data.get("USE_WATCHDOG", "n")
+WATCHDOG_SUBJECT = data.get("WATCHDOG_SUBJECT", "Watchdog ALERT")
+WATCHDOG_NOTIFY_EMAIL = data.get("WATCHDOG_NOTIFY_EMAIL", "")
+WATCHDOG_NOTIFY_WEBHOOK = data.get("WATCHDOG_NOTIFY_WEBHOOK", "")
+WATCHDOG_NOTIFY_WEBHOOK_BODY = data.get("WATCHDOG_NOTIFY_WEBHOOK_BODY", "")
+WATCHDOG_NOTIFY_BAN = data.get("WATCHDOG_NOTIFY_BAN", "y")
+WATCHDOG_NOTIFY_START = data.get("WATCHDOG_NOTIFY_START", "y")
+WATCHDOG_VERBOSE = data.get("WATCHDOG_VERBOSE", "n")
+WATCHDOG_EXTERNAL_CHECKS = data.get("WATCHDOG_EXTERNAL_CHECKS", "n")
+WATCHDOG_MYSQL_REPLICATION_CHECKS = data.get("WATCHDOG_MYSQL_REPLICATION_CHECKS", "n")
+IP_BY_DOCKER_API = data.get("IP_BY_DOCKER_API", "0")
+CHECK_UNBOUND = data.get("CHECK_UNBOUND", "1")
+MYSQL_REPLICATION_THRESHOLD = data.get("MYSQL_REPLICATION_THRESHOLD", "1")
+RSPAMD_THRESHOLD = data.get("RSPAMD_THRESHOLD", "5")
+MAILQ_CRIT = data.get("MAILQ_CRIT", "30")
+POSTFIX_TLSPOL_THRESHOLD = data.get("POSTFIX_TLSPOL_THRESHOLD", "8")
+RATELIMIT_THRESHOLD = data.get("RATELIMIT_THRESHOLD", "1")
+UNBOUND_THRESHOLD = data.get("UNBOUND_THRESHOLD", "5")
+MYSQL_THRESHOLD = data.get("MYSQL_THRESHOLD", "5")
+CLAMD_THRESHOLD = data.get("CLAMD_THRESHOLD", "15")
+DOVECOT_THRESHOLD = data.get("DOVECOT_THRESHOLD", "12")
+EXTERNAL_CHECKS_THRESHOLD = data.get("EXTERNAL_CHECKS_THRESHOLD", "1")
+SOGO_THRESHOLD = data.get("SOGO_THRESHOLD", "3")
+POSTFIX_THRESHOLD = data.get("POSTFIX_THRESHOLD", "8")
+DOVECOT_REPL_THRESHOLD = data.get("DOVECOT_REPL_THRESHOLD", "20")
+FAIL2BAN_THRESHOLD = data.get("FAIL2BAN_THRESHOLD", "1")
+ACME_THRESHOLD = data.get("ACME_THRESHOLD", "1")
+NGINX_THRESHOLD = data.get("NGINX_THRESHOLD", "5")
+PHPFPM_THRESHOLD = data.get("PHPFPM_THRESHOLD", "5")
+OLEFY_THRESHOLD = data.get("OLEFY_THRESHOLD", "5")
+MAILQ_THRESHOLD = data.get("MAILQ_THRESHOLD", "20")
+REDIS_THRESHOLD = data.get("REDIS_THRESHOLD", "5")
 watchdog_mailcow = {
     "USE_WATCHDOG": USE_WATCHDOG,
     "WATCHDOG_SUBJECT": WATCHDOG_SUBJECT,
@@ -417,22 +393,25 @@ ofelia_mailcow = {
 }
 agent.write_envfile("ofelia-mailcow.env", ofelia_mailcow)
 
-API_KEY = data.get("API_KEY", "${API_KEY:-invalid}")
-API_KEY_READ_ONLY = data.get("API_KEY_READ_ONLY", "${API_KEY_READ_ONLY:-invalid}")
-API_ALLOW_FROM = data.get("API_ALLOW_FROM", "${API_ALLOW_FROM:-invalid}")
-SIEVE_PORT = data.get("SIEVE_PORT", "${SIEVE_PORT:-4190}")
-IMAP_PORT = data.get("IMAP_PORT", "${IMAP_PORT:-143}")
-IMAPS_PORT = data.get("IMAPS_PORT", "${IMAPS_PORT:-993}")
-POP_PORT = data.get("POP_PORT", "${POP_PORT:-110}")
-POPS_PORT = data.get("POPS_PORT", "${POPS_PORT:-995}")
-SMTP_PORT = data.get("SMTP_PORT", "${SMTP_PORT:-25}")
-SMTPS_PORT = data.get("SMTPS_PORT", "${SMTPS_PORT:-465}")
-SUBMISSION_PORT = data.get("SUBMISSION_PORT", "${SUBMISSION_PORT:-587}")
-CLUSTERMODE = data.get("CLUSTERMODE", "${CLUSTERMODE:-}")
-WEBAUTHN_ONLY_TRUSTED_VENDORS = data.get(
-    "WEBAUTHN_ONLY_TRUSTED_VENDORS", "${WEBAUTHN_ONLY_TRUSTED_VENDORS:-n}"
-)
-DEMO_MODE = data.get("DEMO_MODE", "${DEMO_MODE:-n}")
+if os.path.exists("php-fpm-mailcow.env"):
+    phpt = agent.read_envfile("php-fpm-mailcow.env")
+    API_KEY = phpt.get("API_KEY", generate_random_password(64))
+    API_KEY_READ_ONLY = phpt.get("API_KEY_READ_ONLY", generate_random_password(64))
+else:
+    API_KEY = generate_random_password(64)
+    API_KEY_READ_ONLY = generate_random_password(64)
+API_ALLOW_FROM = data.get("API_ALLOW_FROM", "127.0.0.1")
+SIEVE_PORT = data.get("SIEVE_PORT", "4190")
+IMAP_PORT = data.get("IMAP_PORT", "143")
+IMAPS_PORT = data.get("IMAPS_PORT", "993")
+POP_PORT = data.get("POP_PORT", "110")
+POPS_PORT = data.get("POPS_PORT", "995")
+SMTP_PORT = data.get("SMTP_PORT", "25")
+SMTPS_PORT = data.get("SMTPS_PORT", "465")
+SUBMISSION_PORT = data.get("SUBMISSION_PORT", "587")
+CLUSTERMODE = data.get("CLUSTERMODE", "")
+WEBAUTHN_ONLY_TRUSTED_VENDORS = data.get("WEBAUTHN_ONLY_TRUSTED_VENDORS", "n")
+DEMO_MODE = data.get("DEMO_MODE", "n")
 php_fpm_mailcow = {
     "API_KEY": API_KEY,
     "API_KEY_READ_ONLY": API_KEY_READ_ONLY,
