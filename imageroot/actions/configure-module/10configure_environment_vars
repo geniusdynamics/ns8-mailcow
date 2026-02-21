@@ -44,6 +44,7 @@ if os.path.exists("dockerapi-mailcow.env"):
 else:
     DBROOT = generate_random_password(32)
 
+# Basic Settings
 TZ = data.get("TZ", "UTC")
 SKIP_CLAMD = data.get("SKIP_CLAMD", "n")
 LOG_LINES = data.get("LOG_LINES", "9999")
@@ -64,7 +65,7 @@ SKIP_OLEFY = data.get("SKIP_OLEFY", "n")
 IPV6_NETWORK = data.get("IPV6_NETWORK", "fd4d:6169:6c63:6f77::/64")
 SKIP_LETS_ENCRYPT = data.get("SKIP_LETS_ENCRYPT", "n")
 HTTPS_PORT = data.get("HTTPS_PORT", "443")
-ADDITIONAL_SERVER_NAMES = data.get("ADDITIONAL_SERVER_NAMES", "")
+ADDITIONAL_SERVER_NAMES = data.get("ADDITIONAL_SAN", "")
 SPAMHAUS_DQS_KEY = data.get("SPAMHAUS_DQS_KEY", "")
 SNAT_TO_SOURCE = data.get("SNAT_TO_SOURCE", "n")
 SNAT6_TO_SOURCE = data.get("SNAT6_TO_SOURCE", "n")

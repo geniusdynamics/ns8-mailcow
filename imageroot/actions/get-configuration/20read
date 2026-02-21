@@ -5,551 +5,342 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-#
-# Read configuration
-#
-
 import os
 import sys
 import json
 import agent
 
-# Prepare return variable
+def read_env_or_default(env_file, defaults):
+    if os.path.exists(env_file):
+        data = agent.read_envfile(env_file)
+        result = {}
+        for key, default in defaults.items():
+            result[key] = data.get(key, default)
+        return result
+    return defaults
+
 config = {}
 
-# Read current configuration from the environment file
 config["host"] = os.getenv("TRAEFIK_HOST","")
 config["http2https"] = os.getenv("TRAEFIK_HTTP2HTTPS") == "True"
 config["lets_encrypt"] = os.getenv("TRAEFIK_LETS_ENCRYPT") == "True"
 
-# Dump the configuration to stdout
-# json.dump(config, fp=sys.stdout)
-if os.path.exists("unbound-mailcow.env"): 
-	data = agent.read_envfile("unbound-mailcow.env") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["SKIP_UNBOUND_HEALTHCHECK"] = data.get("SKIP_UNBOUND_HEALTHCHECK", "${SKIP_UNBOUND_HEALTHCHECK:-n}") 
-else: 
-	config["TZ"] = "${TZ}" 
-	config["SKIP_UNBOUND_HEALTHCHECK"] = "${SKIP_UNBOUND_HEALTHCHECK:-n}" 
- 
-if os.path.exists("clamd-mailcow.env"): 
-	data = agent.read_envfile("clamd-mailcow.env") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["SKIP_CLAMD"] = data.get("SKIP_CLAMD", "${SKIP_CLAMD:-n}") 
-else: 
-	config["TZ"] = "${TZ}" 
-	config["SKIP_CLAMD"] = "${SKIP_CLAMD:-n}" 
- 
-if os.path.exists("sogo-mailcow.env"): 
-	data = agent.read_envfile("sogo-mailcow.env") 
-	config["MAILCOW_PASS_SCHEME"] = data.get("MAILCOW_PASS_SCHEME", "${MAILCOW_PASS_SCHEME:-BLF-CRYPT}") 
-	config["MASTER"] = data.get("MASTER", "${MASTER:-y}") 
-	config["DBPASS"] = data.get("DBPASS", "${DBPASS}") 
-	config["MAILCOW_HOSTNAME"] = data.get("MAILCOW_HOSTNAME", "${MAILCOW_HOSTNAME}") 
-	config["SOGO_URL_ENCRYPTION_KEY"] = data.get("SOGO_URL_ENCRYPTION_KEY", "${SOGO_URL_ENCRYPTION_KEY:-SOGoSuperSecret0}") 
-	config["SKIP_SOGO"] = data.get("SKIP_SOGO", "${SKIP_SOGO:-n}") 
-	config["REDIS_SLAVEOF_PORT"] = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
-	config["ACL_ANYONE"] = data.get("ACL_ANYONE", "${ACL_ANYONE:-disallow}") 
-	config["ALLOW_ADMIN_EMAIL_LOGIN"] = data.get("ALLOW_ADMIN_EMAIL_LOGIN", "${ALLOW_ADMIN_EMAIL_LOGIN:-n}") 
-	config["REDISPASS"] = data.get("REDISPASS", "${REDISPASS}") 
-	config["DBUSER"] = data.get("DBUSER", "${DBUSER}") 
-	config["IPV4_NETWORK"] = data.get("IPV4_NETWORK", "${IPV4_NETWORK:-172.22.1}") 
-	config["SOGO_EXPIRE_SESSION"] = data.get("SOGO_EXPIRE_SESSION", "${SOGO_EXPIRE_SESSION:-480}") 
-	config["REDIS_SLAVEOF_IP"] = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
-	config["DBNAME"] = data.get("DBNAME", "${DBNAME}") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["LOG_LINES"] = data.get("LOG_LINES", "${LOG_LINES:-9999}") 
-else: 
-	config["DBNAME"] = "${DBNAME}" 
-	config["TZ"] = "${TZ}" 
-	config["LOG_LINES"] = "${LOG_LINES:-9999}" 
-	config["MAILCOW_PASS_SCHEME"] = "${MAILCOW_PASS_SCHEME:-BLF-CRYPT}" 
-	config["MASTER"] = "${MASTER:-y}" 
-	config["DBPASS"] = "${DBPASS}" 
-	config["MAILCOW_HOSTNAME"] = "${MAILCOW_HOSTNAME}" 
-	config["SOGO_URL_ENCRYPTION_KEY"] = "${SOGO_URL_ENCRYPTION_KEY:-SOGoSuperSecret0}" 
-	config["SKIP_SOGO"] = "${SKIP_SOGO:-n}" 
-	config["REDIS_SLAVEOF_PORT"] = "${REDIS_SLAVEOF_PORT:-}" 
-	config["ACL_ANYONE"] = "${ACL_ANYONE:-disallow}" 
-	config["ALLOW_ADMIN_EMAIL_LOGIN"] = "${ALLOW_ADMIN_EMAIL_LOGIN:-n}" 
-	config["REDISPASS"] = "${REDISPASS}" 
-	config["DBUSER"] = "${DBUSER}" 
-	config["IPV4_NETWORK"] = "${IPV4_NETWORK:-172.22.1}" 
-	config["SOGO_EXPIRE_SESSION"] = "${SOGO_EXPIRE_SESSION:-480}" 
-	config["REDIS_SLAVEOF_IP"] = "${REDIS_SLAVEOF_IP:-}" 
- 
-if os.path.exists("dovecot-mailcow.env"): 
-	data = agent.read_envfile("dovecot-mailcow.env") 
-	config["DOVECOT_MASTER_USER"] = data.get("DOVECOT_MASTER_USER", "${DOVECOT_MASTER_USER:-}") 
-	config["DOVEADM_REPLICA_PORT"] = data.get("DOVEADM_REPLICA_PORT", "${DOVEADM_REPLICA_PORT:-}") 
-	config["MAILCOW_HOSTNAME"] = data.get("MAILCOW_HOSTNAME", "${MAILCOW_HOSTNAME}") 
-	config["IPV4_NETWORK"] = data.get("IPV4_NETWORK", "${IPV4_NETWORK:-172.22.1}") 
-	config["ALLOW_ADMIN_EMAIL_LOGIN"] = data.get("ALLOW_ADMIN_EMAIL_LOGIN", "${ALLOW_ADMIN_EMAIL_LOGIN:-n}") 
-	config["MAILDIR_GC_TIME"] = data.get("MAILDIR_GC_TIME", "${MAILDIR_GC_TIME:-7200}") 
-	config["SKIP_FTS"] = data.get("SKIP_FTS", "${SKIP_FTS:-y}") 
-	config["FTS_PROCS"] = data.get("FTS_PROCS", "${FTS_PROCS:-3}") 
-	config["DOVECOT_MASTER_PASS"] = data.get("DOVECOT_MASTER_PASS", "${DOVECOT_MASTER_PASS:-}") 
-	config["LOG_LINES"] = data.get("LOG_LINES", "${LOG_LINES:-9999}") 
-	config["DBPASS"] = data.get("DBPASS", "${DBPASS}") 
-	config["MAILCOW_PASS_SCHEME"] = data.get("MAILCOW_PASS_SCHEME", "${MAILCOW_PASS_SCHEME:-BLF-CRYPT}") 
-	config["ACL_ANYONE"] = data.get("ACL_ANYONE", "${ACL_ANYONE:-disallow}") 
-	config["MAILDIR_SUB"] = data.get("MAILDIR_SUB", "${MAILDIR_SUB:-}") 
-	config["MASTER"] = data.get("MASTER", "${MASTER:-y}") 
-	config["REDIS_SLAVEOF_IP"] = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
-	config["FTS_HEAP"] = data.get("FTS_HEAP", "${FTS_HEAP:-512}") 
-	config["REDISPASS"] = data.get("REDISPASS", "${REDISPASS}") 
-	config["MAILCOW_REPLICA_IP"] = data.get("MAILCOW_REPLICA_IP", "${MAILCOW_REPLICA_IP:-}") 
-	config["DBNAME"] = data.get("DBNAME", "${DBNAME}") 
-	config["DBUSER"] = data.get("DBUSER", "${DBUSER}") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["REDIS_SLAVEOF_PORT"] = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
-	config["COMPOSE_PROJECT_NAME"] = data.get("COMPOSE_PROJECT_NAME", "${COMPOSE_PROJECT_NAME:-mailcow-dockerized}") 
-else: 
-	config["DOVECOT_MASTER_USER"] = "${DOVECOT_MASTER_USER:-}" 
-	config["DOVEADM_REPLICA_PORT"] = "${DOVEADM_REPLICA_PORT:-}" 
-	config["MAILCOW_HOSTNAME"] = "${MAILCOW_HOSTNAME}" 
-	config["IPV4_NETWORK"] = "${IPV4_NETWORK:-172.22.1}" 
-	config["ALLOW_ADMIN_EMAIL_LOGIN"] = "${ALLOW_ADMIN_EMAIL_LOGIN:-n}" 
-	config["MAILDIR_GC_TIME"] = "${MAILDIR_GC_TIME:-7200}" 
-	config["SKIP_FTS"] = "${SKIP_FTS:-y}" 
-	config["FTS_PROCS"] = "${FTS_PROCS:-3}" 
-	config["DOVECOT_MASTER_PASS"] = "${DOVECOT_MASTER_PASS:-}" 
-	config["LOG_LINES"] = "${LOG_LINES:-9999}" 
-	config["DBPASS"] = "${DBPASS}" 
-	config["MAILCOW_PASS_SCHEME"] = "${MAILCOW_PASS_SCHEME:-BLF-CRYPT}" 
-	config["ACL_ANYONE"] = "${ACL_ANYONE:-disallow}" 
-	config["MAILDIR_SUB"] = "${MAILDIR_SUB:-}" 
-	config["MASTER"] = "${MASTER:-y}" 
-	config["REDIS_SLAVEOF_IP"] = "${REDIS_SLAVEOF_IP:-}" 
-	config["FTS_HEAP"] = "${FTS_HEAP:-512}" 
-	config["REDISPASS"] = "${REDISPASS}" 
-	config["MAILCOW_REPLICA_IP"] = "${MAILCOW_REPLICA_IP:-}" 
-	config["DBNAME"] = "${DBNAME}" 
-	config["DBUSER"] = "${DBUSER}" 
-	config["TZ"] = "${TZ}" 
-	config["REDIS_SLAVEOF_PORT"] = "${REDIS_SLAVEOF_PORT:-}" 
-	config["COMPOSE_PROJECT_NAME"] = "${COMPOSE_PROJECT_NAME:-mailcow-dockerized}" 
- 
-if os.path.exists("postfix-tlspol-mailcow.env"): 
-	data = agent.read_envfile("postfix-tlspol-mailcow.env") 
-	config["LOG_LINES"] = data.get("LOG_LINES", "${LOG_LINES:-9999}") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["REDIS_SLAVEOF_IP"] = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
-	config["REDIS_SLAVEOF_PORT"] = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
-	config["REDISPASS"] = data.get("REDISPASS", "${REDISPASS}") 
-	config["DEV_MODE"] = data.get("DEV_MODE", "${DEV_MODE:-n}") 
-else: 
-	config["LOG_LINES"] = "${LOG_LINES:-9999}" 
-	config["TZ"] = "${TZ}" 
-	config["REDIS_SLAVEOF_IP"] = "${REDIS_SLAVEOF_IP:-}" 
-	config["REDIS_SLAVEOF_PORT"] = "${REDIS_SLAVEOF_PORT:-}" 
-	config["REDISPASS"] = "${REDISPASS}" 
-	config["DEV_MODE"] = "${DEV_MODE:-n}" 
- 
-if os.path.exists("nginx-mailcow.env"): 
-	data = agent.read_envfile("nginx-mailcow.env") 
-	config["HTTPS_PORT"] = data.get("HTTPS_PORT", "${HTTPS_PORT:-443}") 
-	config["MAILCOW_HOSTNAME"] = data.get("MAILCOW_HOSTNAME", "${MAILCOW_HOSTNAME}") 
-	config["ENABLE_IPV6"] = data.get("ENABLE_IPV6", "${ENABLE_IPV6:-true}") 
-	config["PHPFPMHOST"] = data.get("PHPFPMHOST", "${PHPFPMHOST:-}") 
-	config["RSPAMDHOST"] = data.get("RSPAMDHOST", "${RSPAMDHOST:-}") 
-	config["REDISHOST"] = data.get("REDISHOST", "${REDISHOST:-}") 
-	config["NGINX_USE_PROXY_PROTOCOL"] = data.get("NGINX_USE_PROXY_PROTOCOL", "${NGINX_USE_PROXY_PROTOCOL:-n}") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["SKIP_RSPAMD"] = data.get("SKIP_RSPAMD", "${SKIP_RSPAMD:-n}") 
-	config["TRUSTED_PROXIES"] = data.get("TRUSTED_PROXIES", "${TRUSTED_PROXIES:-}") 
-	config["IPV4_NETWORK"] = data.get("IPV4_NETWORK", "${IPV4_NETWORK:-172.22.1}") 
-	config["SKIP_SOGO"] = data.get("SKIP_SOGO", "${SKIP_SOGO:-n}") 
-	config["HTTP_REDIRECT"] = data.get("HTTP_REDIRECT", "${HTTP_REDIRECT:-n}") 
-	config["HTTP_PORT"] = data.get("HTTP_PORT", "${HTTP_PORT:-80}") 
-	config["ADDITIONAL_SERVER_NAMES"] = data.get("ADDITIONAL_SERVER_NAMES", "${ADDITIONAL_SERVER_NAMES:-}") 
-	config["SOGOHOST"] = data.get("SOGOHOST", "${SOGOHOST:-}") 
-else: 
-	config["HTTP_PORT"] = "${HTTP_PORT:-80}" 
-	config["ADDITIONAL_SERVER_NAMES"] = "${ADDITIONAL_SERVER_NAMES:-}" 
-	config["SOGOHOST"] = "${SOGOHOST:-}" 
-	config["HTTPS_PORT"] = "${HTTPS_PORT:-443}" 
-	config["MAILCOW_HOSTNAME"] = "${MAILCOW_HOSTNAME}" 
-	config["ENABLE_IPV6"] = "${ENABLE_IPV6:-true}" 
-	config["PHPFPMHOST"] = "${PHPFPMHOST:-}" 
-	config["RSPAMDHOST"] = "${RSPAMDHOST:-}" 
-	config["REDISHOST"] = "${REDISHOST:-}" 
-	config["NGINX_USE_PROXY_PROTOCOL"] = "${NGINX_USE_PROXY_PROTOCOL:-n}" 
-	config["TZ"] = "${TZ}" 
-	config["SKIP_RSPAMD"] = "${SKIP_RSPAMD:-n}" 
-	config["TRUSTED_PROXIES"] = "${TRUSTED_PROXIES:-}" 
-	config["IPV4_NETWORK"] = "${IPV4_NETWORK:-172.22.1}" 
-	config["SKIP_SOGO"] = "${SKIP_SOGO:-n}" 
-	config["HTTP_REDIRECT"] = "${HTTP_REDIRECT:-n}" 
- 
-if os.path.exists("dockerapi-mailcow.env"): 
-	data = agent.read_envfile("dockerapi-mailcow.env") 
-	config["REDIS_SLAVEOF_PORT"] = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
-	config["REDISPASS"] = data.get("REDISPASS", "${REDISPASS}") 
-	config["DBROOT"] = data.get("DBROOT", "${DBROOT}") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["REDIS_SLAVEOF_IP"] = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
-else: 
-	config["REDIS_SLAVEOF_IP"] = "${REDIS_SLAVEOF_IP:-}" 
-	config["REDIS_SLAVEOF_PORT"] = "${REDIS_SLAVEOF_PORT:-}" 
-	config["REDISPASS"] = "${REDISPASS}" 
-	config["DBROOT"] = "${DBROOT}" 
-	config["TZ"] = "${TZ}" 
- 
-if os.path.exists("olefy-mailcow.env"): 
-	data = agent.read_envfile("olefy-mailcow.env") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["OLEFY_BINDPORT"] = data.get("OLEFY_BINDPORT", "10055") 
-	config["OLEFY_OLEVBA_PATH"] = data.get("OLEFY_OLEVBA_PATH", "/usr/bin/olevba") 
-	config["SKIP_OLEFY"] = data.get("SKIP_OLEFY", "${SKIP_OLEFY:-n}") 
-	config["OLEFY_BINDADDRESS"] = data.get("OLEFY_BINDADDRESS", "0.0.0.0") 
-	config["OLEFY_TMPDIR"] = data.get("OLEFY_TMPDIR", "/tmp") 
-	config["OLEFY_PYTHON_PATH"] = data.get("OLEFY_PYTHON_PATH", "/usr/bin/python3") 
-	config["OLEFY_LOGLVL"] = data.get("OLEFY_LOGLVL", "20") 
-	config["OLEFY_MINLENGTH"] = data.get("OLEFY_MINLENGTH", "500") 
-	config["OLEFY_DEL_TMP"] = data.get("OLEFY_DEL_TMP", "1") 
-else: 
-	config["SKIP_OLEFY"] = "${SKIP_OLEFY:-n}" 
-	config["OLEFY_BINDADDRESS"] = "0.0.0.0" 
-	config["OLEFY_TMPDIR"] = "/tmp" 
-	config["OLEFY_PYTHON_PATH"] = "/usr/bin/python3" 
-	config["OLEFY_LOGLVL"] = "20" 
-	config["OLEFY_MINLENGTH"] = "500" 
-	config["OLEFY_DEL_TMP"] = "1" 
-	config["TZ"] = "${TZ}" 
-	config["OLEFY_BINDPORT"] = "10055" 
-	config["OLEFY_OLEVBA_PATH"] = "/usr/bin/olevba" 
- 
-if os.path.exists("mysql-mailcow.env"): 
-	data = agent.read_envfile("mysql-mailcow.env") 
-	config["MYSQL_USER"] = data.get("MYSQL_USER", "${DBUSER}") 
-	config["MYSQL_PASSWORD"] = data.get("MYSQL_PASSWORD", "${DBPASS}") 
-	config["MYSQL_INITDB_SKIP_TZINFO"] = data.get("MYSQL_INITDB_SKIP_TZINFO", "1") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["MYSQL_ROOT_PASSWORD"] = data.get("MYSQL_ROOT_PASSWORD", "${DBROOT}") 
-	config["MYSQL_DATABASE"] = data.get("MYSQL_DATABASE", "${DBNAME}") 
-else: 
-	config["TZ"] = "${TZ}" 
-	config["MYSQL_ROOT_PASSWORD"] = "${DBROOT}" 
-	config["MYSQL_DATABASE"] = "${DBNAME}" 
-	config["MYSQL_USER"] = "${DBUSER}" 
-	config["MYSQL_PASSWORD"] = "${DBPASS}" 
-	config["MYSQL_INITDB_SKIP_TZINFO"] = "1" 
- 
-if os.path.exists("postfix-mailcow.env"): 
-	data = agent.read_envfile("postfix-mailcow.env") 
-	config["REDIS_SLAVEOF_IP"] = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
-	config["REDIS_SLAVEOF_PORT"] = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
-	config["REDISPASS"] = data.get("REDISPASS", "${REDISPASS}") 
-	config["SPAMHAUS_DQS_KEY"] = data.get("SPAMHAUS_DQS_KEY", "${SPAMHAUS_DQS_KEY:-}") 
-	config["LOG_LINES"] = data.get("LOG_LINES", "${LOG_LINES:-9999}") 
-	config["DBNAME"] = data.get("DBNAME", "${DBNAME}") 
-	config["DBUSER"] = data.get("DBUSER", "${DBUSER}") 
-	config["MAILCOW_HOSTNAME"] = data.get("MAILCOW_HOSTNAME", "${MAILCOW_HOSTNAME}") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["DBPASS"] = data.get("DBPASS", "${DBPASS}") 
-else: 
-	config["DBPASS"] = "${DBPASS}" 
-	config["REDIS_SLAVEOF_IP"] = "${REDIS_SLAVEOF_IP:-}" 
-	config["REDIS_SLAVEOF_PORT"] = "${REDIS_SLAVEOF_PORT:-}" 
-	config["REDISPASS"] = "${REDISPASS}" 
-	config["SPAMHAUS_DQS_KEY"] = "${SPAMHAUS_DQS_KEY:-}" 
-	config["LOG_LINES"] = "${LOG_LINES:-9999}" 
-	config["DBNAME"] = "${DBNAME}" 
-	config["DBUSER"] = "${DBUSER}" 
-	config["MAILCOW_HOSTNAME"] = "${MAILCOW_HOSTNAME}" 
-	config["TZ"] = "${TZ}" 
- 
-if os.path.exists("memcached-mailcow.env"): 
-	data = agent.read_envfile("memcached-mailcow.env") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-else: 
-	config["TZ"] = "${TZ}" 
- 
-if os.path.exists("acme-mailcow.env"): 
-	data = agent.read_envfile("acme-mailcow.env") 
-	config["ONLY_MAILCOW_HOSTNAME"] = data.get("ONLY_MAILCOW_HOSTNAME", "${ONLY_MAILCOW_HOSTNAME:-n}") 
-	config["REDIS_SLAVEOF_IP"] = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
-	config["REDIS_SLAVEOF_PORT"] = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
-	config["LE_STAGING"] = data.get("LE_STAGING", "${LE_STAGING:-n}") 
-	config["SNAT6_TO_SOURCE"] = data.get("SNAT6_TO_SOURCE", "${SNAT6_TO_SOURCE:-n}") 
-	config["ADDITIONAL_SAN"] = data.get("ADDITIONAL_SAN", "${ADDITIONAL_SAN}") 
-	config["SKIP_LETS_ENCRYPT"] = data.get("SKIP_LETS_ENCRYPT", "${SKIP_LETS_ENCRYPT:-n}") 
-	config["COMPOSE_PROJECT_NAME"] = data.get("COMPOSE_PROJECT_NAME", "${COMPOSE_PROJECT_NAME:-mailcow-dockerized}") 
-	config["DIRECTORY_URL"] = data.get("DIRECTORY_URL", "${DIRECTORY_URL:-}") 
-	config["SKIP_HTTP_VERIFICATION"] = data.get("SKIP_HTTP_VERIFICATION", "${SKIP_HTTP_VERIFICATION:-n}") 
-	config["REDISPASS"] = data.get("REDISPASS", "${REDISPASS}") 
-	config["SNAT_TO_SOURCE"] = data.get("SNAT_TO_SOURCE", "${SNAT_TO_SOURCE:-n}") 
-	config["LOG_LINES"] = data.get("LOG_LINES", "${LOG_LINES:-9999}") 
-	config["AUTODISCOVER_SAN"] = data.get("AUTODISCOVER_SAN", "${AUTODISCOVER_SAN:-y}") 
-	config["MAILCOW_HOSTNAME"] = data.get("MAILCOW_HOSTNAME", "${MAILCOW_HOSTNAME}") 
-	config["DBPASS"] = data.get("DBPASS", "${DBPASS}") 
-	config["ENABLE_SSL_SNI"] = data.get("ENABLE_SSL_SNI", "${ENABLE_SSL_SNI:-n}") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["DBNAME"] = data.get("DBNAME", "${DBNAME}") 
-	config["DBUSER"] = data.get("DBUSER", "${DBUSER}") 
-	config["SKIP_IP_CHECK"] = data.get("SKIP_IP_CHECK", "${SKIP_IP_CHECK:-n}") 
-else: 
-	config["COMPOSE_PROJECT_NAME"] = "${COMPOSE_PROJECT_NAME:-mailcow-dockerized}" 
-	config["DIRECTORY_URL"] = "${DIRECTORY_URL:-}" 
-	config["SKIP_HTTP_VERIFICATION"] = "${SKIP_HTTP_VERIFICATION:-n}" 
-	config["REDISPASS"] = "${REDISPASS}" 
-	config["SNAT_TO_SOURCE"] = "${SNAT_TO_SOURCE:-n}" 
-	config["LOG_LINES"] = "${LOG_LINES:-9999}" 
-	config["AUTODISCOVER_SAN"] = "${AUTODISCOVER_SAN:-y}" 
-	config["MAILCOW_HOSTNAME"] = "${MAILCOW_HOSTNAME}" 
-	config["DBPASS"] = "${DBPASS}" 
-	config["ENABLE_SSL_SNI"] = "${ENABLE_SSL_SNI:-n}" 
-	config["TZ"] = "${TZ}" 
-	config["DBNAME"] = "${DBNAME}" 
-	config["DBUSER"] = "${DBUSER}" 
-	config["SKIP_IP_CHECK"] = "${SKIP_IP_CHECK:-n}" 
-	config["ONLY_MAILCOW_HOSTNAME"] = "${ONLY_MAILCOW_HOSTNAME:-n}" 
-	config["REDIS_SLAVEOF_IP"] = "${REDIS_SLAVEOF_IP:-}" 
-	config["REDIS_SLAVEOF_PORT"] = "${REDIS_SLAVEOF_PORT:-}" 
-	config["LE_STAGING"] = "${LE_STAGING:-n}" 
-	config["SNAT6_TO_SOURCE"] = "${SNAT6_TO_SOURCE:-n}" 
-	config["ADDITIONAL_SAN"] = "${ADDITIONAL_SAN}" 
-	config["SKIP_LETS_ENCRYPT"] = "${SKIP_LETS_ENCRYPT:-n}" 
- 
-if os.path.exists("netfilter-mailcow.env"): 
-	data = agent.read_envfile("netfilter-mailcow.env") 
-	config["REDIS_SLAVEOF_PORT"] = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["IPV4_NETWORK"] = data.get("IPV4_NETWORK", "${IPV4_NETWORK:-172.22.1}") 
-	config["IPV6_NETWORK"] = data.get("IPV6_NETWORK", "${IPV6_NETWORK:-fd4d:6169:6c63:6f77::/64}") 
-	config["SNAT_TO_SOURCE"] = data.get("SNAT_TO_SOURCE", "${SNAT_TO_SOURCE:-n}") 
-	config["REDIS_SLAVEOF_IP"] = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
-	config["REDISPASS"] = data.get("REDISPASS", "${REDISPASS}") 
-	config["MAILCOW_REPLICA_IP"] = data.get("MAILCOW_REPLICA_IP", "${MAILCOW_REPLICA_IP:-}") 
-	config["DISABLE_NETFILTER_ISOLATION_RULE"] = data.get("DISABLE_NETFILTER_ISOLATION_RULE", "${DISABLE_NETFILTER_ISOLATION_RULE:-n}") 
-	config["SNAT6_TO_SOURCE"] = data.get("SNAT6_TO_SOURCE", "${SNAT6_TO_SOURCE:-n}") 
-else: 
-	config["TZ"] = "${TZ}" 
-	config["IPV4_NETWORK"] = "${IPV4_NETWORK:-172.22.1}" 
-	config["IPV6_NETWORK"] = "${IPV6_NETWORK:-fd4d:6169:6c63:6f77::/64}" 
-	config["SNAT_TO_SOURCE"] = "${SNAT_TO_SOURCE:-n}" 
-	config["REDIS_SLAVEOF_IP"] = "${REDIS_SLAVEOF_IP:-}" 
-	config["REDISPASS"] = "${REDISPASS}" 
-	config["MAILCOW_REPLICA_IP"] = "${MAILCOW_REPLICA_IP:-}" 
-	config["DISABLE_NETFILTER_ISOLATION_RULE"] = "${DISABLE_NETFILTER_ISOLATION_RULE:-n}" 
-	config["SNAT6_TO_SOURCE"] = "${SNAT6_TO_SOURCE:-n}" 
-	config["REDIS_SLAVEOF_PORT"] = "${REDIS_SLAVEOF_PORT:-}" 
- 
-if os.path.exists("watchdog-mailcow.env"): 
-	data = agent.read_envfile("watchdog-mailcow.env") 
-	config["NGINX_THRESHOLD"] = data.get("NGINX_THRESHOLD", "${NGINX_THRESHOLD:-5}") 
-	config["PHPFPM_THRESHOLD"] = data.get("PHPFPM_THRESHOLD", "${PHPFPM_THRESHOLD:-5}") 
-	config["OLEFY_THRESHOLD"] = data.get("OLEFY_THRESHOLD", "${OLEFY_THRESHOLD:-5}") 
-	config["MAILQ_THRESHOLD"] = data.get("MAILQ_THRESHOLD", "${MAILQ_THRESHOLD:-20}") 
-	config["IPV6_NETWORK"] = data.get("IPV6_NETWORK", "${IPV6_NETWORK:-fd4d:6169:6c63:6f77::/64}") 
-	config["DBROOT"] = data.get("DBROOT", "${DBROOT}") 
-	config["USE_WATCHDOG"] = data.get("USE_WATCHDOG", "${USE_WATCHDOG:-n}") 
-	config["WATCHDOG_NOTIFY_WEBHOOK"] = data.get("WATCHDOG_NOTIFY_WEBHOOK", "${WATCHDOG_NOTIFY_WEBHOOK:-}") 
-	config["REDIS_THRESHOLD"] = data.get("REDIS_THRESHOLD", "${REDIS_THRESHOLD:-5}") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["SKIP_LETS_ENCRYPT"] = data.get("SKIP_LETS_ENCRYPT", "${SKIP_LETS_ENCRYPT:-n}") 
-	config["HTTPS_PORT"] = data.get("HTTPS_PORT", "${HTTPS_PORT:-443}") 
-	config["MYSQL_REPLICATION_THRESHOLD"] = data.get("MYSQL_REPLICATION_THRESHOLD", "${MYSQL_REPLICATION_THRESHOLD:-1}") 
-	config["RSPAMD_THRESHOLD"] = data.get("RSPAMD_THRESHOLD", "${RSPAMD_THRESHOLD:-5}") 
-	config["MAILQ_CRIT"] = data.get("MAILQ_CRIT", "${MAILQ_CRIT:-30}") 
-	config["DBUSER"] = data.get("DBUSER", "${DBUSER}") 
-	config["IP_BY_DOCKER_API"] = data.get("IP_BY_DOCKER_API", "${IP_BY_DOCKER_API:-0}") 
-	config["CHECK_UNBOUND"] = data.get("CHECK_UNBOUND", "${CHECK_UNBOUND:-1}") 
-	config["POSTFIX_TLSPOL_THRESHOLD"] = data.get("POSTFIX_TLSPOL_THRESHOLD", "${POSTFIX_TLSPOL_THRESHOLD:-8}") 
-	config["RATELIMIT_THRESHOLD"] = data.get("RATELIMIT_THRESHOLD", "${RATELIMIT_THRESHOLD:-1}") 
-	config["WATCHDOG_NOTIFY_BAN"] = data.get("WATCHDOG_NOTIFY_BAN", "${WATCHDOG_NOTIFY_BAN:-y}") 
-	config["COMPOSE_PROJECT_NAME"] = data.get("COMPOSE_PROJECT_NAME", "${COMPOSE_PROJECT_NAME:-mailcow-dockerized}") 
-	config["SKIP_SOGO"] = data.get("SKIP_SOGO", "${SKIP_SOGO:-n}") 
-	config["UNBOUND_THRESHOLD"] = data.get("UNBOUND_THRESHOLD", "${UNBOUND_THRESHOLD:-5}") 
-	config["MYSQL_THRESHOLD"] = data.get("MYSQL_THRESHOLD", "${MYSQL_THRESHOLD:-5}") 
-	config["CLAMD_THRESHOLD"] = data.get("CLAMD_THRESHOLD", "${CLAMD_THRESHOLD:-15}") 
-	config["DOVECOT_THRESHOLD"] = data.get("DOVECOT_THRESHOLD", "${DOVECOT_THRESHOLD:-12}") 
-	config["DBNAME"] = data.get("DBNAME", "${DBNAME}") 
-	config["WATCHDOG_SUBJECT"] = data.get("WATCHDOG_SUBJECT", "${WATCHDOG_SUBJECT:-Watchdog ALERT}") 
-	config["WATCHDOG_NOTIFY_WEBHOOK_BODY"] = data.get("WATCHDOG_NOTIFY_WEBHOOK_BODY", "${WATCHDOG_NOTIFY_WEBHOOK_BODY:-}") 
-	config["WATCHDOG_MYSQL_REPLICATION_CHECKS"] = data.get("WATCHDOG_MYSQL_REPLICATION_CHECKS", "${WATCHDOG_MYSQL_REPLICATION_CHECKS:-n}") 
-	config["WATCHDOG_VERBOSE"] = data.get("WATCHDOG_VERBOSE", "${WATCHDOG_VERBOSE:-n}") 
-	config["IPV4_NETWORK"] = data.get("IPV4_NETWORK", "${IPV4_NETWORK:-172.22.1}") 
-	config["SKIP_OLEFY"] = data.get("SKIP_OLEFY", "${SKIP_OLEFY:-n}") 
-	config["REDIS_SLAVEOF_PORT"] = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
-	config["LOG_LINES"] = data.get("LOG_LINES", "${LOG_LINES:-9999}") 
-	config["WATCHDOG_NOTIFY_START"] = data.get("WATCHDOG_NOTIFY_START", "${WATCHDOG_NOTIFY_START:-y}") 
-	config["REDIS_SLAVEOF_IP"] = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
-	config["REDISPASS"] = data.get("REDISPASS", "${REDISPASS}") 
-	config["EXTERNAL_CHECKS_THRESHOLD"] = data.get("EXTERNAL_CHECKS_THRESHOLD", "${EXTERNAL_CHECKS_THRESHOLD:-1}") 
-	config["SOGO_THRESHOLD"] = data.get("SOGO_THRESHOLD", "${SOGO_THRESHOLD:-3}") 
-	config["POSTFIX_THRESHOLD"] = data.get("POSTFIX_THRESHOLD", "${POSTFIX_THRESHOLD:-8}") 
-	config["DOVECOT_REPL_THRESHOLD"] = data.get("DOVECOT_REPL_THRESHOLD", "${DOVECOT_REPL_THRESHOLD:-20}") 
-	config["WATCHDOG_EXTERNAL_CHECKS"] = data.get("WATCHDOG_EXTERNAL_CHECKS", "${WATCHDOG_EXTERNAL_CHECKS:-n}") 
-	config["MAILCOW_HOSTNAME"] = data.get("MAILCOW_HOSTNAME", "${MAILCOW_HOSTNAME}") 
-	config["FAIL2BAN_THRESHOLD"] = data.get("FAIL2BAN_THRESHOLD", "${FAIL2BAN_THRESHOLD:-1}") 
-	config["ACME_THRESHOLD"] = data.get("ACME_THRESHOLD", "${ACME_THRESHOLD:-1}") 
-	config["DEV_MODE"] = data.get("DEV_MODE", "${DEV_MODE:-n}") 
-	config["DBPASS"] = data.get("DBPASS", "${DBPASS}") 
-	config["WATCHDOG_NOTIFY_EMAIL"] = data.get("WATCHDOG_NOTIFY_EMAIL", "${WATCHDOG_NOTIFY_EMAIL:-}") 
-	config["SKIP_CLAMD"] = data.get("SKIP_CLAMD", "${SKIP_CLAMD:-n}") 
-else: 
-	config["DEV_MODE"] = "${DEV_MODE:-n}" 
-	config["DBPASS"] = "${DBPASS}" 
-	config["WATCHDOG_NOTIFY_EMAIL"] = "${WATCHDOG_NOTIFY_EMAIL:-}" 
-	config["SKIP_CLAMD"] = "${SKIP_CLAMD:-n}" 
-	config["NGINX_THRESHOLD"] = "${NGINX_THRESHOLD:-5}" 
-	config["PHPFPM_THRESHOLD"] = "${PHPFPM_THRESHOLD:-5}" 
-	config["OLEFY_THRESHOLD"] = "${OLEFY_THRESHOLD:-5}" 
-	config["MAILQ_THRESHOLD"] = "${MAILQ_THRESHOLD:-20}" 
-	config["IPV6_NETWORK"] = "${IPV6_NETWORK:-fd4d:6169:6c63:6f77::/64}" 
-	config["DBROOT"] = "${DBROOT}" 
-	config["USE_WATCHDOG"] = "${USE_WATCHDOG:-n}" 
-	config["WATCHDOG_NOTIFY_WEBHOOK"] = "${WATCHDOG_NOTIFY_WEBHOOK:-}" 
-	config["REDIS_THRESHOLD"] = "${REDIS_THRESHOLD:-5}" 
-	config["TZ"] = "${TZ}" 
-	config["SKIP_LETS_ENCRYPT"] = "${SKIP_LETS_ENCRYPT:-n}" 
-	config["HTTPS_PORT"] = "${HTTPS_PORT:-443}" 
-	config["MYSQL_REPLICATION_THRESHOLD"] = "${MYSQL_REPLICATION_THRESHOLD:-1}" 
-	config["RSPAMD_THRESHOLD"] = "${RSPAMD_THRESHOLD:-5}" 
-	config["MAILQ_CRIT"] = "${MAILQ_CRIT:-30}" 
-	config["DBUSER"] = "${DBUSER}" 
-	config["IP_BY_DOCKER_API"] = "${IP_BY_DOCKER_API:-0}" 
-	config["CHECK_UNBOUND"] = "${CHECK_UNBOUND:-1}" 
-	config["POSTFIX_TLSPOL_THRESHOLD"] = "${POSTFIX_TLSPOL_THRESHOLD:-8}" 
-	config["RATELIMIT_THRESHOLD"] = "${RATELIMIT_THRESHOLD:-1}" 
-	config["WATCHDOG_NOTIFY_BAN"] = "${WATCHDOG_NOTIFY_BAN:-y}" 
-	config["COMPOSE_PROJECT_NAME"] = "${COMPOSE_PROJECT_NAME:-mailcow-dockerized}" 
-	config["SKIP_SOGO"] = "${SKIP_SOGO:-n}" 
-	config["UNBOUND_THRESHOLD"] = "${UNBOUND_THRESHOLD:-5}" 
-	config["MYSQL_THRESHOLD"] = "${MYSQL_THRESHOLD:-5}" 
-	config["CLAMD_THRESHOLD"] = "${CLAMD_THRESHOLD:-15}" 
-	config["DOVECOT_THRESHOLD"] = "${DOVECOT_THRESHOLD:-12}" 
-	config["DBNAME"] = "${DBNAME}" 
-	config["WATCHDOG_SUBJECT"] = "${WATCHDOG_SUBJECT:-Watchdog ALERT}" 
-	config["WATCHDOG_NOTIFY_WEBHOOK_BODY"] = "${WATCHDOG_NOTIFY_WEBHOOK_BODY:-}" 
-	config["WATCHDOG_MYSQL_REPLICATION_CHECKS"] = "${WATCHDOG_MYSQL_REPLICATION_CHECKS:-n}" 
-	config["WATCHDOG_VERBOSE"] = "${WATCHDOG_VERBOSE:-n}" 
-	config["IPV4_NETWORK"] = "${IPV4_NETWORK:-172.22.1}" 
-	config["SKIP_OLEFY"] = "${SKIP_OLEFY:-n}" 
-	config["REDIS_SLAVEOF_PORT"] = "${REDIS_SLAVEOF_PORT:-}" 
-	config["LOG_LINES"] = "${LOG_LINES:-9999}" 
-	config["WATCHDOG_NOTIFY_START"] = "${WATCHDOG_NOTIFY_START:-y}" 
-	config["REDIS_SLAVEOF_IP"] = "${REDIS_SLAVEOF_IP:-}" 
-	config["REDISPASS"] = "${REDISPASS}" 
-	config["EXTERNAL_CHECKS_THRESHOLD"] = "${EXTERNAL_CHECKS_THRESHOLD:-1}" 
-	config["SOGO_THRESHOLD"] = "${SOGO_THRESHOLD:-3}" 
-	config["POSTFIX_THRESHOLD"] = "${POSTFIX_THRESHOLD:-8}" 
-	config["DOVECOT_REPL_THRESHOLD"] = "${DOVECOT_REPL_THRESHOLD:-20}" 
-	config["WATCHDOG_EXTERNAL_CHECKS"] = "${WATCHDOG_EXTERNAL_CHECKS:-n}" 
-	config["MAILCOW_HOSTNAME"] = "${MAILCOW_HOSTNAME}" 
-	config["FAIL2BAN_THRESHOLD"] = "${FAIL2BAN_THRESHOLD:-1}" 
-	config["ACME_THRESHOLD"] = "${ACME_THRESHOLD:-1}" 
- 
-if os.path.exists("redis-mailcow.env"): 
-	data = agent.read_envfile("redis-mailcow.env") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["REDISPASS"] = data.get("REDISPASS", "${REDISPASS}") 
-	config["REDISMASTERPASS"] = data.get("REDISMASTERPASS", "${REDISMASTERPASS:-}") 
-else: 
-	config["TZ"] = "${TZ}" 
-	config["REDISPASS"] = "${REDISPASS}" 
-	config["REDISMASTERPASS"] = "${REDISMASTERPASS:-}" 
- 
-if os.path.exists("rspamd-mailcow.env"): 
-	data = agent.read_envfile("rspamd-mailcow.env") 
-	config["SPAMHAUS_DQS_KEY"] = data.get("SPAMHAUS_DQS_KEY", "${SPAMHAUS_DQS_KEY:-}") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["IPV4_NETWORK"] = data.get("IPV4_NETWORK", "${IPV4_NETWORK:-172.22.1}") 
-	config["IPV6_NETWORK"] = data.get("IPV6_NETWORK", "${IPV6_NETWORK:-fd4d:6169:6c63:6f77::/64}") 
-	config["REDIS_SLAVEOF_IP"] = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
-	config["REDIS_SLAVEOF_PORT"] = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
-	config["REDISPASS"] = data.get("REDISPASS", "${REDISPASS}") 
-else: 
-	config["TZ"] = "${TZ}" 
-	config["IPV4_NETWORK"] = "${IPV4_NETWORK:-172.22.1}" 
-	config["IPV6_NETWORK"] = "${IPV6_NETWORK:-fd4d:6169:6c63:6f77::/64}" 
-	config["REDIS_SLAVEOF_IP"] = "${REDIS_SLAVEOF_IP:-}" 
-	config["REDIS_SLAVEOF_PORT"] = "${REDIS_SLAVEOF_PORT:-}" 
-	config["REDISPASS"] = "${REDISPASS}" 
-	config["SPAMHAUS_DQS_KEY"] = "${SPAMHAUS_DQS_KEY:-}" 
- 
-if os.path.exists("ofelia-mailcow.env"): 
-	data = agent.read_envfile("ofelia-mailcow.env") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["COMPOSE_PROJECT_NAME"] = data.get("COMPOSE_PROJECT_NAME", "${COMPOSE_PROJECT_NAME}") 
-else: 
-	config["TZ"] = "${TZ}" 
-	config["COMPOSE_PROJECT_NAME"] = "${COMPOSE_PROJECT_NAME}" 
- 
-if os.path.exists("php-fpm-mailcow.env"): 
-	data = agent.read_envfile("php-fpm-mailcow.env") 
-	config["MAILCOW_HOSTNAME"] = data.get("MAILCOW_HOSTNAME", "${MAILCOW_HOSTNAME}") 
-	config["IMAPS_PORT"] = data.get("IMAPS_PORT", "${IMAPS_PORT:-993}") 
-	config["API_KEY_READ_ONLY"] = data.get("API_KEY_READ_ONLY", "${API_KEY_READ_ONLY:-invalid}") 
-	config["SKIP_CLAMD"] = data.get("SKIP_CLAMD", "${SKIP_CLAMD:-n}") 
-	config["ALLOW_ADMIN_EMAIL_LOGIN"] = data.get("ALLOW_ADMIN_EMAIL_LOGIN", "${ALLOW_ADMIN_EMAIL_LOGIN:-n}") 
-	config["MASTER"] = data.get("MASTER", "${MASTER:-y}") 
-	config["DEMO_MODE"] = data.get("DEMO_MODE", "${DEMO_MODE:-n}") 
-	config["LOG_LINES"] = data.get("LOG_LINES", "${LOG_LINES:-9999}") 
-	config["POP_PORT"] = data.get("POP_PORT", "${POP_PORT:-110}") 
-	config["POPS_PORT"] = data.get("POPS_PORT", "${POPS_PORT:-995}") 
-	config["IPV4_NETWORK"] = data.get("IPV4_NETWORK", "${IPV4_NETWORK:-172.22.1}") 
-	config["API_KEY"] = data.get("API_KEY", "${API_KEY:-invalid}") 
-	config["SKIP_FTS"] = data.get("SKIP_FTS", "${SKIP_FTS:-y}") 
-	config["DEV_MODE"] = data.get("DEV_MODE", "${DEV_MODE:-n}") 
-	config["ADDITIONAL_SERVER_NAMES"] = data.get("ADDITIONAL_SERVER_NAMES", "${ADDITIONAL_SERVER_NAMES:-}") 
-	config["DBUSER"] = data.get("DBUSER", "${DBUSER}") 
-	config["IPV6_NETWORK"] = data.get("IPV6_NETWORK", "${IPV6_NETWORK:-fd4d:6169:6c63:6f77::/64}") 
-	config["API_ALLOW_FROM"] = data.get("API_ALLOW_FROM", "${API_ALLOW_FROM:-invalid}") 
-	config["DBNAME"] = data.get("DBNAME", "${DBNAME}") 
-	config["DBPASS"] = data.get("DBPASS", "${DBPASS}") 
-	config["MAILCOW_PASS_SCHEME"] = data.get("MAILCOW_PASS_SCHEME", "${MAILCOW_PASS_SCHEME:-BLF-CRYPT}") 
-	config["SIEVE_PORT"] = data.get("SIEVE_PORT", "${SIEVE_PORT:-4190}") 
-	config["SKIP_OLEFY"] = data.get("SKIP_OLEFY", "${SKIP_OLEFY:-n}") 
-	config["TZ"] = data.get("TZ", "${TZ}") 
-	config["CLUSTERMODE"] = data.get("CLUSTERMODE", "${CLUSTERMODE:-}") 
-	config["REDIS_SLAVEOF_PORT"] = data.get("REDIS_SLAVEOF_PORT", "${REDIS_SLAVEOF_PORT:-}") 
-	config["IMAP_PORT"] = data.get("IMAP_PORT", "${IMAP_PORT:-143}") 
-	config["SUBMISSION_PORT"] = data.get("SUBMISSION_PORT", "${SUBMISSION_PORT:-587}") 
-	config["SMTPS_PORT"] = data.get("SMTPS_PORT", "${SMTPS_PORT:-465}") 
-	config["SMTP_PORT"] = data.get("SMTP_PORT", "${SMTP_PORT:-25}") 
-	config["SKIP_SOGO"] = data.get("SKIP_SOGO", "${SKIP_SOGO:-n}") 
-	config["REDIS_SLAVEOF_IP"] = data.get("REDIS_SLAVEOF_IP", "${REDIS_SLAVEOF_IP:-}") 
-	config["REDISPASS"] = data.get("REDISPASS", "${REDISPASS}") 
-	config["WEBAUTHN_ONLY_TRUSTED_VENDORS"] = data.get("WEBAUTHN_ONLY_TRUSTED_VENDORS", "${WEBAUTHN_ONLY_TRUSTED_VENDORS:-n}") 
-	config["COMPOSE_PROJECT_NAME"] = data.get("COMPOSE_PROJECT_NAME", "${COMPOSE_PROJECT_NAME:-mailcow-dockerized}") 
-else: 
-	config["ADDITIONAL_SERVER_NAMES"] = "${ADDITIONAL_SERVER_NAMES:-}" 
-	config["DBUSER"] = "${DBUSER}" 
-	config["IPV6_NETWORK"] = "${IPV6_NETWORK:-fd4d:6169:6c63:6f77::/64}" 
-	config["API_ALLOW_FROM"] = "${API_ALLOW_FROM:-invalid}" 
-	config["DBNAME"] = "${DBNAME}" 
-	config["DBPASS"] = "${DBPASS}" 
-	config["MAILCOW_PASS_SCHEME"] = "${MAILCOW_PASS_SCHEME:-BLF-CRYPT}" 
-	config["SIEVE_PORT"] = "${SIEVE_PORT:-4190}" 
-	config["SKIP_OLEFY"] = "${SKIP_OLEFY:-n}" 
-	config["TZ"] = "${TZ}" 
-	config["CLUSTERMODE"] = "${CLUSTERMODE:-}" 
-	config["REDIS_SLAVEOF_PORT"] = "${REDIS_SLAVEOF_PORT:-}" 
-	config["IMAP_PORT"] = "${IMAP_PORT:-143}" 
-	config["SUBMISSION_PORT"] = "${SUBMISSION_PORT:-587}" 
-	config["SMTPS_PORT"] = "${SMTPS_PORT:-465}" 
-	config["SMTP_PORT"] = "${SMTP_PORT:-25}" 
-	config["SKIP_SOGO"] = "${SKIP_SOGO:-n}" 
-	config["REDIS_SLAVEOF_IP"] = "${REDIS_SLAVEOF_IP:-}" 
-	config["REDISPASS"] = "${REDISPASS}" 
-	config["WEBAUTHN_ONLY_TRUSTED_VENDORS"] = "${WEBAUTHN_ONLY_TRUSTED_VENDORS:-n}" 
-	config["COMPOSE_PROJECT_NAME"] = "${COMPOSE_PROJECT_NAME:-mailcow-dockerized}" 
-	config["MAILCOW_HOSTNAME"] = "${MAILCOW_HOSTNAME}" 
-	config["IMAPS_PORT"] = "${IMAPS_PORT:-993}" 
-	config["API_KEY_READ_ONLY"] = "${API_KEY_READ_ONLY:-invalid}" 
-	config["SKIP_CLAMD"] = "${SKIP_CLAMD:-n}" 
-	config["ALLOW_ADMIN_EMAIL_LOGIN"] = "${ALLOW_ADMIN_EMAIL_LOGIN:-n}" 
-	config["MASTER"] = "${MASTER:-y}" 
-	config["DEMO_MODE"] = "${DEMO_MODE:-n}" 
-	config["LOG_LINES"] = "${LOG_LINES:-9999}" 
-	config["POP_PORT"] = "${POP_PORT:-110}" 
-	config["POPS_PORT"] = "${POPS_PORT:-995}" 
-	config["IPV4_NETWORK"] = "${IPV4_NETWORK:-172.22.1}" 
-	config["API_KEY"] = "${API_KEY:-invalid}" 
-	config["SKIP_FTS"] = "${SKIP_FTS:-y}" 
-	config["DEV_MODE"] = "${DEV_MODE:-n}" 
- 
+unbound_defaults = {
+    "TZ": "UTC",
+    "SKIP_UNBOUND_HEALTHCHECK": "n",
+}
+unbound_config = read_env_or_default("unbound-mailcow.env", unbound_defaults)
+config.update(unbound_config)
+
+clamd_defaults = {
+    "TZ": "UTC",
+    "SKIP_CLAMD": "n",
+}
+clamd_config = read_env_or_default("clamd-mailcow.env", clamd_defaults)
+config.update(clamd_config)
+
+sogo_defaults = {
+    "MAILCOW_PASS_SCHEME": "BLF-CRYPT",
+    "MASTER": "y",
+    "DBPASS": "",
+    "MAILCOW_HOSTNAME": "",
+    "SOGO_URL_ENCRYPTION_KEY": "",
+    "SKIP_SOGO": "n",
+    "REDIS_SLAVEOF_PORT": "",
+    "ACL_ANYONE": "disallow",
+    "ALLOW_ADMIN_EMAIL_LOGIN": "n",
+    "REDISPASS": "",
+    "DBUSER": "mailcow",
+    "IPV4_NETWORK": "172.22.1",
+    "SOGO_EXPIRE_SESSION": "480",
+    "REDIS_SLAVEOF_IP": "",
+    "DBNAME": "mailcow",
+    "TZ": "UTC",
+    "LOG_LINES": "9999",
+}
+sogo_config = read_env_or_default("sogo-mailcow.env", sogo_defaults)
+config.update(sogo_config)
+
+dovecot_defaults = {
+    "DOVECOT_MASTER_USER": "",
+    "DOVEADM_REPLICA_PORT": "",
+    "MAILCOW_HOSTNAME": "",
+    "IPV4_NETWORK": "172.22.1",
+    "ALLOW_ADMIN_EMAIL_LOGIN": "n",
+    "MAILDIR_GC_TIME": "7200",
+    "SKIP_FTS": "y",
+    "FTS_PROCS": "3",
+    "DOVECOT_MASTER_PASS": "",
+    "LOG_LINES": "9999",
+    "DBPASS": "",
+    "MAILCOW_PASS_SCHEME": "BLF-CRYPT",
+    "ACL_ANYONE": "disallow",
+    "MAILDIR_SUB": "",
+    "MASTER": "y",
+    "REDIS_SLAVEOF_IP": "",
+    "FTS_HEAP": "512",
+    "REDISPASS": "",
+    "MAILCOW_REPLICA_IP": "",
+    "DBNAME": "mailcow",
+    "DBUSER": "mailcow",
+    "TZ": "UTC",
+    "REDIS_SLAVEOF_PORT": "",
+    "COMPOSE_PROJECT_NAME": "mailcow-dockerized",
+}
+dovecot_config = read_env_or_default("dovecot-mailcow.env", dovecot_defaults)
+config.update(dovecot_config)
+
+postfix_tlspol_defaults = {
+    "LOG_LINES": "9999",
+    "TZ": "UTC",
+    "REDIS_SLAVEOF_IP": "",
+    "REDIS_SLAVEOF_PORT": "",
+    "REDISPASS": "",
+    "DEV_MODE": "n",
+}
+postfix_tlspol_config = read_env_or_default("postfix-tlspol-mailcow.env", postfix_tlspol_defaults)
+config.update(postfix_tlspol_config)
+
+nginx_defaults = {
+    "HTTPS_PORT": "443",
+    "MAILCOW_HOSTNAME": "",
+    "ENABLE_IPV6": "true",
+    "PHPFPMHOST": "",
+    "RSPAMDHOST": "",
+    "REDISHOST": "",
+    "NGINX_USE_PROXY_PROTOCOL": "n",
+    "TZ": "UTC",
+    "SKIP_RSPAMD": "n",
+    "TRUSTED_PROXIES": "",
+    "IPV4_NETWORK": "172.22.1",
+    "SKIP_SOGO": "n",
+    "HTTP_REDIRECT": "n",
+    "HTTP_PORT": "80",
+    "ADDITIONAL_SERVER_NAMES": "",
+    "SOGOHOST": "",
+}
+nginx_config = read_env_or_default("nginx-mailcow.env", nginx_defaults)
+config.update(nginx_config)
+
+dockerapi_defaults = {
+    "REDIS_SLAVEOF_PORT": "",
+    "REDISPASS": "",
+    "DBROOT": "",
+    "TZ": "UTC",
+    "REDIS_SLAVEOF_IP": "",
+}
+dockerapi_config = read_env_or_default("dockerapi-mailcow.env", dockerapi_defaults)
+config.update(dockerapi_config)
+
+olefy_defaults = {
+    "TZ": "UTC",
+    "OLEFY_BINDPORT": "10055",
+    "OLEFY_OLEVBA_PATH": "/usr/bin/olevba",
+    "SKIP_OLEFY": "n",
+    "OLEFY_BINDADDRESS": "0.0.0.0",
+    "OLEFY_TMPDIR": "/tmp",
+    "OLEFY_PYTHON_PATH": "/usr/bin/python3",
+    "OLEFY_LOGLVL": "20",
+    "OLEFY_MINLENGTH": "500",
+    "OLEFY_DEL_TMP": "1",
+}
+olefy_config = read_env_or_default("olefy-mailcow.env", olefy_defaults)
+config.update(olefy_config)
+
+mysql_defaults = {
+    "MYSQL_USER": "mailcow",
+    "MYSQL_PASSWORD": "",
+    "MYSQL_INITDB_SKIP_TZINFO": "1",
+    "TZ": "UTC",
+    "MYSQL_ROOT_PASSWORD": "",
+    "MYSQL_DATABASE": "mailcow",
+}
+mysql_config = read_env_or_default("mysql-mailcow.env", mysql_defaults)
+config.update(mysql_config)
+
+postfix_defaults = {
+    "REDIS_SLAVEOF_IP": "",
+    "REDIS_SLAVEOF_PORT": "",
+    "REDISPASS": "",
+    "SPAMHAUS_DQS_KEY": "",
+    "LOG_LINES": "9999",
+    "DBNAME": "mailcow",
+    "DBUSER": "mailcow",
+    "MAILCOW_HOSTNAME": "",
+    "TZ": "UTC",
+    "DBPASS": "",
+}
+postfix_config = read_env_or_default("postfix-mailcow.env", postfix_defaults)
+config.update(postfix_config)
+
+memcached_defaults = {
+    "TZ": "UTC",
+}
+memcached_config = read_env_or_default("memcached-mailcow.env", memcached_defaults)
+config.update(memcached_config)
+
+acme_defaults = {
+    "ONLY_MAILCOW_HOSTNAME": "n",
+    "REDIS_SLAVEOF_IP": "",
+    "REDIS_SLAVEOF_PORT": "",
+    "LE_STAGING": "n",
+    "SNAT6_TO_SOURCE": "n",
+    "ADDITIONAL_SAN": "",
+    "SKIP_LETS_ENCRYPT": "n",
+    "COMPOSE_PROJECT_NAME": "mailcow-dockerized",
+    "DIRECTORY_URL": "",
+    "SKIP_HTTP_VERIFICATION": "n",
+    "REDISPASS": "",
+    "SNAT_TO_SOURCE": "n",
+    "LOG_LINES": "9999",
+    "AUTODISCOVER_SAN": "y",
+    "MAILCOW_HOSTNAME": "",
+    "DBPASS": "",
+    "ENABLE_SSL_SNI": "n",
+    "TZ": "UTC",
+    "DBNAME": "mailcow",
+    "DBUSER": "mailcow",
+    "SKIP_IP_CHECK": "n",
+}
+acme_config = read_env_or_default("acme-mailcow.env", acme_defaults)
+config.update(acme_config)
+
+netfilter_defaults = {
+    "REDIS_SLAVEOF_PORT": "",
+    "TZ": "UTC",
+    "IPV4_NETWORK": "172.22.1",
+    "IPV6_NETWORK": "fd4d:6169:6c63:6f77::/64",
+    "SNAT_TO_SOURCE": "n",
+    "REDIS_SLAVEOF_IP": "",
+    "REDISPASS": "",
+    "MAILCOW_REPLICA_IP": "",
+    "DISABLE_NETFILTER_ISOLATION_RULE": "n",
+    "SNAT6_TO_SOURCE": "n",
+}
+netfilter_config = read_env_or_default("netfilter-mailcow.env", netfilter_defaults)
+config.update(netfilter_config)
+
+watchdog_defaults = {
+    "NGINX_THRESHOLD": "5",
+    "PHPFPM_THRESHOLD": "5",
+    "OLEFY_THRESHOLD": "5",
+    "MAILQ_THRESHOLD": "20",
+    "IPV6_NETWORK": "fd4d:6169:6c63:6f77::/64",
+    "DBROOT": "",
+    "USE_WATCHDOG": "n",
+    "WATCHDOG_NOTIFY_WEBHOOK": "",
+    "REDIS_THRESHOLD": "5",
+    "TZ": "UTC",
+    "SKIP_LETS_ENCRYPT": "n",
+    "HTTPS_PORT": "443",
+    "MYSQL_REPLICATION_THRESHOLD": "1",
+    "RSPAMD_THRESHOLD": "5",
+    "MAILQ_CRIT": "30",
+    "DBUSER": "mailcow",
+    "IP_BY_DOCKER_API": "0",
+    "CHECK_UNBOUND": "1",
+    "POSTFIX_TLSPOL_THRESHOLD": "8",
+    "RATELIMIT_THRESHOLD": "1",
+    "WATCHDOG_NOTIFY_BAN": "y",
+    "COMPOSE_PROJECT_NAME": "mailcow-dockerized",
+    "SKIP_SOGO": "n",
+    "UNBOUND_THRESHOLD": "5",
+    "MYSQL_THRESHOLD": "5",
+    "CLAMD_THRESHOLD": "15",
+    "DOVECOT_THRESHOLD": "12",
+    "DBNAME": "mailcow",
+    "WATCHDOG_SUBJECT": "Watchdog ALERT",
+    "WATCHDOG_NOTIFY_WEBHOOK_BODY": "",
+    "WATCHDOG_MYSQL_REPLICATION_CHECKS": "n",
+    "WATCHDOG_VERBOSE": "n",
+    "IPV4_NETWORK": "172.22.1",
+    "SKIP_OLEFY": "n",
+    "REDIS_SLAVEOF_PORT": "",
+    "LOG_LINES": "9999",
+    "WATCHDOG_NOTIFY_START": "y",
+    "REDIS_SLAVEOF_IP": "",
+    "REDISPASS": "",
+    "EXTERNAL_CHECKS_THRESHOLD": "1",
+    "SOGO_THRESHOLD": "3",
+    "POSTFIX_THRESHOLD": "8",
+    "DOVECOT_REPL_THRESHOLD": "20",
+    "WATCHDOG_EXTERNAL_CHECKS": "n",
+    "MAILCOW_HOSTNAME": "",
+    "FAIL2BAN_THRESHOLD": "1",
+    "ACME_THRESHOLD": "1",
+    "DEV_MODE": "n",
+    "DBPASS": "",
+    "WATCHDOG_NOTIFY_EMAIL": "",
+    "SKIP_CLAMD": "n",
+}
+watchdog_config = read_env_or_default("watchdog-mailcow.env", watchdog_defaults)
+config.update(watchdog_config)
+
+redis_defaults = {
+    "TZ": "UTC",
+    "REDISPASS": "",
+    "REDISMASTERPASS": "",
+}
+redis_config = read_env_or_default("redis-mailcow.env", redis_defaults)
+config.update(redis_config)
+
+rspamd_defaults = {
+    "SPAMHAUS_DQS_KEY": "",
+    "TZ": "UTC",
+    "IPV4_NETWORK": "172.22.1",
+    "IPV6_NETWORK": "fd4d:6169:6c63:6f77::/64",
+    "REDIS_SLAVEOF_IP": "",
+    "REDIS_SLAVEOF_PORT": "",
+    "REDISPASS": "",
+}
+rspamd_config = read_env_or_default("rspamd-mailcow.env", rspamd_defaults)
+config.update(rspamd_config)
+
+ofelia_defaults = {
+    "TZ": "UTC",
+    "COMPOSE_PROJECT_NAME": "mailcow-dockerized",
+}
+ofelia_config = read_env_or_default("ofelia-mailcow.env", ofelia_defaults)
+config.update(ofelia_config)
+
+php_fpm_defaults = {
+    "MAILCOW_HOSTNAME": "",
+    "IMAPS_PORT": "993",
+    "API_KEY_READ_ONLY": "",
+    "SKIP_CLAMD": "n",
+    "ALLOW_ADMIN_EMAIL_LOGIN": "n",
+    "MASTER": "y",
+    "DEMO_MODE": "n",
+    "LOG_LINES": "9999",
+    "POP_PORT": "110",
+    "POPS_PORT": "995",
+    "IPV4_NETWORK": "172.22.1",
+    "API_KEY": "",
+    "SKIP_FTS": "y",
+    "DEV_MODE": "n",
+    "ADDITIONAL_SERVER_NAMES": "",
+    "DBUSER": "mailcow",
+    "IPV6_NETWORK": "fd4d:6169:6c63:6f77::/64",
+    "API_ALLOW_FROM": "127.0.0.1",
+    "DBNAME": "mailcow",
+    "DBPASS": "",
+    "MAILCOW_PASS_SCHEME": "BLF-CRYPT",
+    "SIEVE_PORT": "4190",
+    "SKIP_OLEFY": "n",
+    "TZ": "UTC",
+    "CLUSTERMODE": "",
+    "REDIS_SLAVEOF_PORT": "",
+    "IMAP_PORT": "143",
+    "SUBMISSION_PORT": "587",
+    "SMTPS_PORT": "465",
+    "SMTP_PORT": "25",
+    "SKIP_SOGO": "n",
+    "REDIS_SLAVEOF_IP": "",
+    "REDISPASS": "",
+    "WEBAUTHN_ONLY_TRUSTED_VENDORS": "n",
+    "COMPOSE_PROJECT_NAME": "mailcow-dockerized",
+}
+php_fpm_config = read_env_or_default("php-fpm-mailcow.env", php_fpm_defaults)
+config.update(php_fpm_config)
+
 json.dump(config, fp=sys.stdout)
