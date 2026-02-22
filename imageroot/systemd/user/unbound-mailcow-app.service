@@ -20,7 +20,7 @@ ExecStartPre=/bin/rm -f %t/unbound-mailcow-app.pid %t/unbound-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/unbound-mailcow-app.pid  --cidfile %t/unbound-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  unbound-mailcow-app   \
     --volume hooks-unbound:/hooks:Z \
-    --volume conf-unbound-unboundconf:/etc/unbound/unbound.conf:ro,Z \
+    --volume conf-unbound-unboundconf:/etc/unbound:ro,Z \
     --env-file unbound-mailcow.env  ${UNBOUND_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/unbound-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP unbound-mailcow-app
