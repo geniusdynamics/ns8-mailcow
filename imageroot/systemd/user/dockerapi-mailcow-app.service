@@ -5,7 +5,7 @@
 
 [Unit]
 Description=Podman  dockerapi-mailcow-app.service
-BindsTo=mailcow.service
+Wants=mailcow.service
 After=mailcow.service
 
 [Service]
