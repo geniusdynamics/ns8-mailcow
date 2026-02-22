@@ -10,8 +10,8 @@
 
 [Unit]
 Description=Podman mailcow.service
-Requires=unbound-app.service clamd-app.service sogo-app.service dovecot-app.service postfix-tlspol-app.service nginx-app.service dockerapi-app.service olefy-app.service mariadb-app.service postfix-app.service memcached-app.service acme-app.service netfilter-app.service watchdog-app.service redis-app.service rspamd-app.service ofelia-app.service phpfpm-app.service 
-Before=unbound-app.service clamd-app.service sogo-app.service dovecot-app.service postfix-tlspol-app.service nginx-app.service dockerapi-app.service olefy-app.service mariadb-app.service postfix-app.service memcached-app.service acme-app.service netfilter-app.service watchdog-app.service redis-app.service rspamd-app.service ofelia-app.service phpfpm-app.service 
+Requires=unbound-mailcow-app.service clamd-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service nginx-mailcow-app.service dockerapi-mailcow-app.service olefy-mailcow-app.service mysql-mailcow-app.service postfix-mailcow-app.service memcached-mailcow-app.service acme-mailcow-app.service netfilter-mailcow-app.service watchdog-mailcow-app.service redis-mailcow-app.service rspamd-mailcow-app.service ofelia-mailcow-app.service phpfpm-mailcow-app.service 
+Before=unbound-mailcow-app.service clamd-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service nginx-mailcow-app.service dockerapi-mailcow-app.service olefy-mailcow-app.service mysql-mailcow-app.service postfix-mailcow-app.service memcached-mailcow-app.service acme-mailcow-app.service netfilter-mailcow-app.service watchdog-mailcow-app.service redis-mailcow-app.service rspamd-mailcow-app.service ofelia-mailcow-app.service phpfpm-mailcow-app.service 
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -19,7 +19,7 @@ EnvironmentFile=-%S/state/environment
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/mailcow.pid %t/mailcow.pod-id
-ExecStartPre=/usr/bin/podman pod create --infra-conmon-pidfile %t/mailcow.pid  --pod-id-file %t/mailcow.pod-id  --name mailcow  --publish 127.0.0.1:${TCP_PORT}:80  --replace
+ExecStartPre=/usr/bin/podman pod create --infra-conmon-pidfile %t/mailcow.pid  --pod-id-file %t/mailcow.pod-id  --name mailcow  --publish 127.0.0.1:${TCP_PORT}:80 --replace
 ExecStart=/usr/bin/podman pod start --pod-id-file %t/mailcow.pod-id
 ExecStop=/usr/bin/podman pod stop --ignore --pod-id-file %t/mailcow.pod-id -t 10
 ExecStopPost=/usr/bin/podman pod rm --ignore -f --pod-id-file %t/mailcow.pod-id
