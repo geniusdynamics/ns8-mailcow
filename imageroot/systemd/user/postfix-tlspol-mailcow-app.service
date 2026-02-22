@@ -5,7 +5,6 @@
 
 [Unit]
 Description=Podman  postfix-tlspol-mailcow-app.service
-BindsTo=mailcow.service
 After=mailcow.service unbound-mailcow-app.service
 
 [Service]

@@ -5,7 +5,6 @@
 
 [Unit]
 Description=Podman  ofelia-mailcow-app.service
-BindsTo=mailcow.service
 After=mailcow.service sogo-mailcow-app.service dovecot-mailcow-app.service
 
 [Service]

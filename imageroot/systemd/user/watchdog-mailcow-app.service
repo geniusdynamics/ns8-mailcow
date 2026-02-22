@@ -5,7 +5,6 @@
 
 [Unit]
 Description=Podman  watchdog-mailcow-app.service
-BindsTo=mailcow.service
 After=mailcow.service postfix-mailcow-app.service dovecot-mailcow-app.service mysql-mailcow-app.service acme-mailcow-app.service redis-mailcow-app.service
 
 [Service]

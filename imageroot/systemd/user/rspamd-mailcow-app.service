@@ -5,7 +5,6 @@
 
 [Unit]
 Description=Podman  rspamd-mailcow-app.service
-BindsTo=mailcow.service
 After=mailcow.service dovecot-mailcow-app.service clamd-mailcow-app.service
 
 [Service]

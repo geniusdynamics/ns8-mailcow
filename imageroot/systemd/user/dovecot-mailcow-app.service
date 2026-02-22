@@ -5,7 +5,6 @@
 
 [Unit]
 Description=Podman  dovecot-mailcow-app.service
-BindsTo=mailcow.service
 After=mailcow.service mysql-mailcow-app.service netfilter-mailcow-app.service redis-mailcow-app.service
 
 [Service]
