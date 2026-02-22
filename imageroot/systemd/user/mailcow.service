@@ -10,8 +10,8 @@
 
 [Unit]
 Description=Podman mailcow.service
-Requires=unbound-mailcow-app.service clamd-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service nginx-mailcow-app.service dockerapi-mailcow-app.service olefy-mailcow-app.service mysql-mailcow-app.service postfix-mailcow-app.service memcached-mailcow-app.service acme-mailcow-app.service netfilter-mailcow-app.service watchdog-mailcow-app.service redis-mailcow-app.service rspamd-mailcow-app.service ofelia-mailcow-app.service phpfpm-mailcow-app.service 
-Before=unbound-mailcow-app.service clamd-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service nginx-mailcow-app.service dockerapi-mailcow-app.service olefy-mailcow-app.service mysql-mailcow-app.service postfix-mailcow-app.service memcached-mailcow-app.service acme-mailcow-app.service netfilter-mailcow-app.service watchdog-mailcow-app.service redis-mailcow-app.service rspamd-mailcow-app.service ofelia-mailcow-app.service phpfpm-mailcow-app.service 
+Requires=unbound-mailcow-app.service clamd-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service nginx-mailcow-app.service dockerapi-mailcow-app.service olefy-mailcow-app.service mysql-mailcow-app.service postfix-mailcow-app.service memcached-mailcow-app.service acme-mailcow-app.service netfilter-mailcow-app.service watchdog-mailcow-app.service redis-mailcow-app.service rspamd-mailcow-app.service ofelia-mailcow-app.service php-fpm-mailcow-app.service 
+Before=unbound-mailcow-app.service clamd-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service nginx-mailcow-app.service dockerapi-mailcow-app.service olefy-mailcow-app.service mysql-mailcow-app.service postfix-mailcow-app.service memcached-mailcow-app.service acme-mailcow-app.service netfilter-mailcow-app.service watchdog-mailcow-app.service redis-mailcow-app.service rspamd-mailcow-app.service ofelia-mailcow-app.service php-fpm-mailcow-app.service 
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
