@@ -19,7 +19,7 @@ ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/netfilter-mailcow-app.pid %t/netfilter-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/netfilter-mailcow-app.pid  --cidfile %t/netfilter-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  netfilter-mailcow-app   \
-    --volume lib-modules:/lib/modules:ro:Z   \
+    --volume lib-modules:/lib/modules:ro,z   \
     --env-file netfilter-mailcow.env  ${NETFILTER_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/netfilter-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP netfilter-mailcow-app
