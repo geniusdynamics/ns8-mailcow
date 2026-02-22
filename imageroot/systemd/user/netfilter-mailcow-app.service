@@ -5,7 +5,6 @@
 
 [Unit]
 Description=Podman  netfilter-mailcow-app.service
-Wants=mailcow.service
 After=mailcow.service
 
 [Service]
