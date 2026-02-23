@@ -24,7 +24,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/postfix-mailcow-app.pid  --cid
     --volume postfix-vol-1:/var/spool/postfix:Z \
     --volume crypt-vol-1:/var/lib/zeyple:Z \
     --volume rspamd-vol-1:/var/lib/rspamd:Z \
-    --volume mysql-socket-vol-1:/var/run/mysqld/:z  \
+    --volume mysql-socket-vol:/var/run/mysqld/:z  \
     --env-file postfix-mailcow.env  ${POSTFIX_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/postfix-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP postfix-mailcow-app

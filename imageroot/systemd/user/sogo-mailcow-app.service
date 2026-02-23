@@ -22,7 +22,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/sogo-mailcow-app.pid  --cidfil
     --volume conf-sogo:/etc/sogo/:z \
     --volume web-inc-initdbincphp:/init_db.inc.php:z \
     --volume conf-sogo-custom:/usr/lib/GNUstep/SOGo/WebServerResources:z \
-    --volume mysql-socket-vol-1:/var/run/mysqld/:z \
+    --volume mysql-socket-vol:/var/run/mysqld/:z \
     --volume sogo-web-vol-1:/sogo_web:Z \
     --volume sogo-userdata-backup-vol-1:/sogo_backup:Z   \
     --env-file sogo-mailcow.env  ${SOGO_IMAGE}

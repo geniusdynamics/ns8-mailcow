@@ -29,7 +29,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/dovecot-mailcow-app.pid  --cid
     --volume rspamd-custom:/etc/rspamd/custom:z \
     --volume assets-templates:/templates:z \
     --volume rspamd-vol-1:/var/lib/rspamd:Z \
-    --volume mysql-socket-vol-1:/var/run/mysqld/:z \
+    --volume mysql-socket-vol:/var/run/mysqld/:z \
     --env-file dovecot-mailcow.env  ${DOVECOT_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/dovecot-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP dovecot-mailcow-app

@@ -30,7 +30,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/php-fpm-mailcow-app.pid  --cid
     --volume web-inc-functionsratelimitincphp:/mailcowauth/functions.ratelimit.inc.php:z \
     --volume web-inc-functionsaclincphp:/mailcowauth/functions.acl.inc.php:z \
     --volume rspamd-vol-1:/var/lib/rspamd:Z \
-    --volume mysql-socket-vol-1:/var/run/mysqld/:z \
+    --volume mysql-socket-vol:/var/run/mysqld/:z \
     --volume conf-sogo:/etc/sogo/:z \
     --volume conf-rspamd-metaexporter:/meta_exporter:ro,z \
     --volume conf-phpfpm-crons:/crons:z \
