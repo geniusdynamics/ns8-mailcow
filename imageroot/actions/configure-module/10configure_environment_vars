@@ -33,10 +33,12 @@ if os.path.exists("mysql-mailcow.env"):
     DBNAME = dbt["MYSQL_DATABASE"]
     DBUSER = dbt["MYSQL_USER"]
     DBPASS = dbt["MYSQL_PASSWORD"]
+    DBROOT = dbt["MYSQL_ROOT_PASSWORD"]
 else:
     DBPASS = generate_random_password(32)
     DBUSER = "mailcow"
     DBNAME = "mailcow"
+    DBROOT = generate_random_password(32)
 
 
 # Basic Settings
@@ -47,11 +49,11 @@ MAILCOW_PASS_SCHEME = data.get("MAILCOW_PASS_SCHEME", "BLF-CRYPT")
 MASTER = data.get("MASTER", "y")
 MAILCOW_HOSTNAME = data.get("host", "")
 SKIP_SOGO = data.get("SKIP_SOGO", "n")
-REDIS_SLAVEOF_PORT = data.get("REDIS_SLAVEOF_PORT", "")
+REDIS_SLAVEOF_PORT = "6379"
+REDIS_SLAVEOF_IP = "redis-mailcow-app"
 ACL_ANYONE = data.get("ACL_ANYONE", "disallow")
 ALLOW_ADMIN_EMAIL_LOGIN = data.get("ALLOW_ADMIN_EMAIL_LOGIN", "n")
 IPV4_NETWORK = data.get("IPV4_NETWORK", "172.22.1")
-REDIS_SLAVEOF_IP = data.get("REDIS_SLAVEOF_IP", "")
 SKIP_FTS = data.get("SKIP_FTS", "y")
 MAILCOW_REPLICA_IP = data.get("MAILCOW_REPLICA_IP", "")
 COMPOSE_PROJECT_NAME = data.get("COMPOSE_PROJECT_NAME", "mailcow-dockerized")
