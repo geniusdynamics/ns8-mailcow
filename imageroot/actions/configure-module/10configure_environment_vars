@@ -38,11 +38,6 @@ else:
     DBUSER = "mailcow"
     DBNAME = "mailcow"
 
-if os.path.exists("dockerapi-mailcow.env"):
-    dapit = agent.read_envfile("dockerapi-mailcow.env")
-    DBROOT = dapit["DBROOT"]
-else:
-    DBROOT = generate_random_password(32)
 
 # Basic Settings
 TZ = data.get("TZ", "UTC")
@@ -159,7 +154,7 @@ NGINX_USE_PROXY_PROTOCOL = data.get("NGINX_USE_PROXY_PROTOCOL", "n")
 REDISHOST = "redis-mailcow-app"
 SOGOHOST = "sogo-mailcow-app"
 PHPFPMHOST = "php-fpm-mailcow-app"
-RSPAMDHOST = data.get("RSPAMDHOST", "")
+RSPAMDHOST = "rspamd-mailcow-app"
 TRUSTED_PROXIES = data.get("TRUSTED_PROXIES", "")
 HTTP_REDIRECT = data.get("HTTP_REDIRECT", "n")
 HTTP_PORT = data.get("HTTP_PORT", "80")
