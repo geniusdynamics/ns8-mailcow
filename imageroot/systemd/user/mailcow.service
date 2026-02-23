@@ -10,9 +10,9 @@
 
 [Unit]
 Description=Podman mailcow.service
-Wants=netfilter-mailcow-app.service olefy-mailcow-app.service dockerapi-mailcow-app.service unbound-mailcow-app.service clamd-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service postfix-mailcow-app.service memcached-mailcow-app.service acme-mailcow-app.service watchdog-mailcow-app.service rspamd-mailcow-app.service ofelia-mailcow-app.service php-fpm-mailcow-app.service 
+Wants=netfilter-mailcow-app.service olefy-mailcow-app.service dockerapi.service unbound-mailcow-app.service clamd-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service postfix-mailcow-app.service memcached-mailcow-app.service acme-mailcow-app.service watchdog-mailcow-app.service rspamd-mailcow-app.service ofelia-mailcow-app.service php-fpm-mailcow-app.service 
 Requires=mysql-mailcow-app.service redis-mailcow-app.service nginx-mailcow-app.service
-Before=netfilter-mailcow-app.service olefy-mailcow-app.service dockerapi-mailcow-app.service unbound-mailcow-app.service clamd-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service postfix-mailcow-app.service memcached-mailcow-app.service acme-mailcow-app.service watchdog-mailcow-app.service rspamd-mailcow-app.service ofelia-mailcow-app.service php-fpm-mailcow-app.service
+Before=netfilter-mailcow-app.service olefy-mailcow-app.service dockerapi.service unbound-mailcow-app.service clamd-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service postfix-mailcow-app.service memcached-mailcow-app.service acme-mailcow-app.service watchdog-mailcow-app.service rspamd-mailcow-app.service ofelia-mailcow-app.service php-fpm-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
