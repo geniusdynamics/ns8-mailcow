@@ -13,5 +13,9 @@ exec 1>&2
 
 touch smarthost.env
 
+# Enable Podman Sockets
+systemctl --user enable podman.socket
+systemctl --user start podman.socket
+
 systemctl --user enable mailcow.service
 systemctl --user restart mailcow.service
