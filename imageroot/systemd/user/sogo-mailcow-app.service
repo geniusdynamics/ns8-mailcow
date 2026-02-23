@@ -21,12 +21,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/sogo-mailcow-app.pid  --cidfil
     --volume hooks-sogo:/hooks:Z \
     --volume conf-sogo:/etc/sogo/:z \
     --volume web-inc-initdbincphp:/init_db.inc.php:z \
-    --volume conf-sogo-custom-faviconico:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo.ico:z \
-    --volume conf-sogo-custom-shortlogosvg:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo-compact.svg:z \
-    --volume conf-sogo-custom-fulllogosvg:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo-full.svg:z \
-    --volume conf-sogo-custom-fulllogopng:/usr/lib/GNUstep/SOGo/WebServerResources/img/sogo-logo.png:z \
-    --volume conf-sogo-custom-themejs:/usr/lib/GNUstep/SOGo/WebServerResources/js/theme.js:z \
-    --volume conf-sogo-custom-sogojs:/usr/lib/GNUstep/SOGo/WebServerResources/js/custom-sogo.js:z \
+    --volume conf-sogo-custom:/usr/lib/GNUstep/SOGo/WebServerResources:z \
     --volume mysql-socket-vol-1:/var/run/mysqld/:z \
     --volume sogo-web-vol-1:/sogo_web:Z \
     --volume sogo-userdata-backup-vol-1:/sogo_backup:Z   \
