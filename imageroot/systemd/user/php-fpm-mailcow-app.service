@@ -21,7 +21,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/php-fpm-mailcow-app.pid  --cid
     --volume hooks-phpfpm:/hooks:Z \
     --volume data-web:/web:z \
     --volume conf-rspamd-dynmaps:/dynmaps:ro,z \
-    --volume rspamd-custom:/rspamd_custom_maps:z \
+    --volume rspamd-custom-fpm:/rspamd_custom_maps:z \
     --volume dovecot-auth-mailcowauthphp:/mailcowauth/mailcowauth.php:z \
     --volume web-inc-functionsincphp:/mailcowauth/functions.inc.php:z \
     --volume web-inc-functionsauthincphp:/mailcowauth/functions.auth.inc.php:z \

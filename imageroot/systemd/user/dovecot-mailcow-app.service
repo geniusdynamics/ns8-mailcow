@@ -26,7 +26,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/dovecot-mailcow-app.pid  --cid
     --volume vmail-vol-1:/var/vmail:Z \
     --volume vmail-index-vol-1:/var/vmail_index:Z \
     --volume crypt-vol-1:/mail_crypt/:Z \
-    --volume rspamd-custom-:/etc/rspamd/custom:z \
+    --volume rspamd-custom:/etc/rspamd/custom:z \
     --volume assets-templates:/templates:z \
     --volume rspamd-vol-1:/var/lib/rspamd:Z \
     --volume mysql-socket-vol-1:/var/run/mysqld/:z \
