@@ -17,20 +17,20 @@ TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/dovecot-mailcow-app.pid %t/dovecot-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/dovecot-mailcow-app.pid  --cidfile %t/dovecot-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  dovecot-mailcow-app   \
-    --volume hooks-dovecot:/hooks:Z \
-    --volume conf-dovecot:/etc/dovecot:z \
-    --volume assets-ssl:/etc/ssl/mail/:ro,z \
-    --volume conf-sogo-:/etc/sogo/:z \
-    --volume phpfpm-sogo-sso-:/etc/phpfpm/:z \
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/dovecot-mailcow-app.pid --cidfile %t/dovecot-mailcow-app.ctr-id --cgroups=no-conmon --pod-id-file %t/mailcow.pod-id --replace -d --name dovecot-mailcow-app \
+    --volume %S/mailcow/data/hooks/dovecot:/hooks:Z \
+    --volume %S/mailcow/data/conf/dovecot:/etc/dovecot:z \
+    --volume %S/mailcow/data/assets/ssl:/etc/ssl/mail:ro,z \
+    --volume %S/mailcow/data/conf/sogo:/etc/sogo:z \
+    --volume %S/mailcow/data/conf/phpfpm/sogo-sso:/etc/phpfpm:z \
     --volume vmail-vol-1:/var/vmail:Z \
     --volume vmail-index-vol-1:/var/vmail_index:Z \
-    --volume crypt-vol-1:/mail_crypt/:Z \
-    --volume rspamd-custom:/etc/rspamd/custom:z \
-    --volume assets-templates:/templates:z \
+    --volume crypt-vol-1:/mail_crypt:Z \
+    --volume %S/mailcow/data/conf/rspamd/custom:/etc/rspamd/custom:z \
+    --volume %S/mailcow/data/assets/templates:/templates:z \
     --volume rspamd-vol-1:/var/lib/rspamd:Z \
-    --volume mysql-socket-vol:/var/run/mysqld/:z \
-    --env-file dovecot-mailcow.env  ${DOVECOT_IMAGE}
+    --volume mysql-socket-vol:/var/run/mysqld:z \
+    --env-file dovecot-mailcow.env ${DOVECOT_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/dovecot-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP dovecot-mailcow-app
 SyslogIdentifier=%u
