@@ -1,0 +1,3 @@
+[submodule "imageroot/mailcow"]
+	path = imageroot/mailcow
+	url = git@github.com:mailcow/mailcow-dockerized.git
