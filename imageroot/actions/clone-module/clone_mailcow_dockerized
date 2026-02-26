@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -e # Exit immediately if a command fails
+
+REPO_URL="https://github.com/mailcow/mailcow-dockerized.git"
+COMMIT_HASH="4845928e7ada830de451a2e6125a03840b9fdb62"
+TARGET_DIR="../mailcow"
+
+echo "Cloning repository..."
+git clone "$REPO_URL" "$TARGET_DIR"
+
+cd "$TARGET_DIR"
+
+echo "Checking out specific commit..."
+git checkout "$COMMIT_HASH"
+
+echo "Done. Repository is now at commit $COMMIT_HASH"
