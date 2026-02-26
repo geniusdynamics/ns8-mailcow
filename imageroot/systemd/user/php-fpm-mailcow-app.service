@@ -17,33 +17,34 @@ TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/php-fpm-mailcow-app.pid %t/php-fpm-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/php-fpm-mailcow-app.pid  --cidfile %t/php-fpm-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  php-fpm-mailcow-app   \
-    --volume hooks-phpfpm:/hooks:Z \
-    --volume data-web:/web:z \
-    --volume conf-rspamd-dynmaps:/dynmaps:ro,z \
-    --volume rspamd-custom-fpm:/rspamd_custom_maps:z \
-    --volume dovecot-auth-mailcowauthphp:/mailcowauth/mailcowauth.php:z \
-    --volume web-inc-functionsincphp:/mailcowauth/functions.inc.php:z \
-    --volume web-inc-functionsauthincphp:/mailcowauth/functions.auth.inc.php:z \
-    --volume web-inc-sessionsincphp:/mailcowauth/sessions.inc.php:z \
-    --volume web-inc-functionsmailboxincphp:/mailcowauth/functions.mailbox.inc.php:z \
-    --volume web-inc-functionsratelimitincphp:/mailcowauth/functions.ratelimit.inc.php:z \
-    --volume web-inc-functionsaclincphp:/mailcowauth/functions.acl.inc.php:z \
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/php-fpm-mailcow-app.pid --cidfile %t/php-fpm-mailcow-app.ctr-id --cgroups=no-conmon --pod-id-file %t/mailcow.pod-id --replace -d --name php-fpm-mailcow-app \
+    --volume %S/mailcow/data/hooks/phpfpm:/hooks:Z \
+    --volume %S/bin/php-fpm-entrypoint:/docker-entrypoint.sh:Z \
+    --volume %S/mailcow/data/web:/web:z \
+    --volume %S/mailcow/data/conf/rspamd/dynmaps:/dynmaps:ro,z \
+    --volume %S/mailcow/data/conf/rspamd/custom:/rspamd_custom_maps:z \
+    --volume %S/mailcow/data/conf/dovecot/auth/mailcowauth.php:/mailcowauth/mailcowauth.php:z \
+    --volume %S/mailcow/data/web/inc/functions.inc.php:/mailcowauth/functions.inc.php:z \
+    --volume %S/mailcow/data/web/inc/functions.auth.inc.php:/mailcowauth/functions.auth.inc.php:z \
+    --volume %S/mailcow/data/web/inc/sessions.inc.php:/mailcowauth/sessions.inc.php:z \
+    --volume %S/mailcow/data/web/inc/functions.mailbox.inc.php:/mailcowauth/functions.mailbox.inc.php:z \
+    --volume %S/mailcow/data/web/inc/functions.ratelimit.inc.php:/mailcowauth/functions.ratelimit.inc.php:z \
+    --volume %S/mailcow/data/web/inc/functions.acl.inc.php:/mailcowauth/functions.acl.inc.php:z \
     --volume rspamd-vol-1:/var/lib/rspamd:Z \
     --volume mysql-socket-vol:/var/run/mysqld/:z \
-    --volume conf-sogo:/etc/sogo/:z \
-    --volume conf-rspamd-metaexporter:/meta_exporter:ro,z \
-    --volume conf-phpfpm-crons:/crons:z \
-    --volume phpfpm-sogo-sso-:/etc/sogo-sso/:z \
-    --volume phpfpm-php-fpmd-poolsconf:/usr/local/etc/php-fpm.d/z-pools.conf:Z \
-    --volume phpfpm-php-confd-opcache-recommendedini:/usr/local/etc/php/conf.d/opcache-recommended.ini:Z \
-    --volume phpfpm-php-confd-uploadini:/usr/local/etc/php/conf.d/upload.ini:Z \
-    --volume phpfpm-php-confd-otherini:/usr/local/etc/php/conf.d/zzz-other.ini:Z \
-    --volume conf-dovecot-globalsievebefore:/global_sieve/before:z \
-    --volume conf-dovecot-globalsieveafter:/global_sieve/after:z \
-    --volume assets-templates:/tpls:z \
-    --volume conf-nginx:/etc/nginx/conf.d/:z   \
-    --env-file php-fpm-mailcow.env  ${PHPFPM_IMAGE}
+    --volume %S/mailcow/data/conf/sogo:/etc/sogo:z \
+    --volume %S/mailcow/data/conf/rspamd/meta_exporter:/meta_exporter:ro,z \
+    --volume %S/mailcow/data/conf/phpfpm/crons:/crons:z \
+    --volume %S/mailcow/data/conf/phpfpm/sogo-sso:/etc/sogo-sso:z \
+    --volume %S/mailcow/data/conf/phpfpm/php-fpm.d/pools.conf:/usr/local/etc/php-fpm.d/z-pools.conf:Z \
+    --volume %S/mailcow/data/conf/phpfpm/php-conf.d/opcache-recommended.ini:/usr/local/etc/php/conf.d/opcache-recommended.ini:Z \
+    --volume %S/mailcow/data/conf/phpfpm/php-conf.d/upload.ini:/usr/local/etc/php/conf.d/upload.ini:Z \
+    --volume %S/mailcow/data/conf/phpfpm/php-conf.d/other.ini:/usr/local/etc/php/conf.d/zzz-other.ini:Z \
+    --volume %S/mailcow/data/conf/dovecot/global_sieve_before:/global_sieve/before:z \
+    --volume %S/mailcow/data/conf/dovecot/global_sieve_after:/global_sieve/after:z \
+    --volume %S/mailcow/data/assets/templates:/tpls:z \
+    --volume %S/mailcow/data/conf/nginx:/etc/nginx/conf.d:z \
+    --env-file php-fpm-mailcow.env ${PHPFPM_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/php-fpm-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP php-fpm-mailcow-app
 SyslogIdentifier=%u
