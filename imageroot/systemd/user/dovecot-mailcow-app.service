@@ -20,7 +20,7 @@ ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/dovecot-mailcow-app.pid --cidfile %t/dovecot-mailcow-app.ctr-id --cgroups=no-conmon --pod-id-file %t/mailcow.pod-id --replace -d --name dovecot-mailcow-app \
     --volume %S/mailcow/data/hooks/dovecot:/hooks:Z \
     --volume %S/mailcow/data/conf/dovecot:/etc/dovecot:z \
-    --volume %S/mailcow/data/assets/ssl:/etc/ssl/mail:ro,z \
+    --volume ssl:/etc/ssl/mail:ro,z \
     --volume %S/mailcow/data/conf/sogo:/etc/sogo:z \
     --volume %S/mailcow/data/conf/phpfpm/sogo-sso:/etc/phpfpm:z \
     --volume vmail-vol-1:/var/vmail:Z \

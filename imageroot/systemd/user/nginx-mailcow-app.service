@@ -21,7 +21,7 @@ ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/nginx-mailcow-app.pid --cidfile %t/nginx-mailcow-app.ctr-id --cgroups=no-conmon --pod-id-file %t/mailcow.pod-id --replace -d --name nginx-mailcow-app \
     --volume %S/mailcow/data/web:/web:ro,z \
     --volume %S/mailcow/data/conf/rspamd/dynmaps:/dynmaps:ro,z \
-    --volume %S/mailcow/data/assets/ssl:/etc/ssl/mail:ro,z \
+    --volume ssl:/etc/ssl/mail:ro,z \
     --volume %S/mailcow/data/conf/nginx:/etc/nginx/conf.d:z \
     --volume %S/mailcow/data/conf/rspamd/meta_exporter:/meta_exporter:ro,z \
     --volume %S/mailcow/data/conf/dovecot/auth/mailcowauth.php:/mailcowauth/mailcowauth.php:z \
