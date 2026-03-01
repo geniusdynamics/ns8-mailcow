@@ -22,7 +22,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/nginx-mailcow-app.pid --cidfil
     --volume %S/mailcow/data/web:/web:ro,z \
     --volume %S/mailcow/data/conf/rspamd/dynmaps:/dynmaps:ro,z \
     --volume ssl:/etc/ssl/mail:ro,z \
-    --volume nginx-conf:/etc/nginx/conf.d:z \
+    --volume %S/mailcow/data/conf/nginx/:/etc/nginx/conf.d:z \
     --volume %S/mailcow/data/conf/rspamd/meta_exporter:/meta_exporter:ro,z \
     --volume %S/mailcow/data/conf/dovecot/auth/mailcowauth.php:/mailcowauth/mailcowauth.php:z \
     --volume %S/mailcow/data/web/inc/functions.inc.php:/mailcowauth/functions.inc.php:z \
