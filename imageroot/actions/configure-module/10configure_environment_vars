@@ -48,7 +48,7 @@ LOG_LINES = data.get("LOG_LINES", "9999")
 MAILCOW_PASS_SCHEME = data.get("MAILCOW_PASS_SCHEME", "BLF-CRYPT")
 MASTER = data.get("MASTER", "y")
 MAILCOW_HOSTNAME = data.get("host", "")
-SKIP_SOGO = data.get("SKIP_SOGO", "n")
+SKIP_SOGO = data.get("SKIP_SOGO", "y")
 REDIS_SLAVEOF_PORT = "6379"
 REDIS_SLAVEOF_IP = "redis-mailcow-app"
 ACL_ANYONE = data.get("ACL_ANYONE", "disallow")
@@ -161,7 +161,7 @@ TRUSTED_PROXIES = data.get("TRUSTED_PROXIES", "")
 HTTP_REDIRECT = data.get("HTTP_REDIRECT", "n")
 HTTP_PORT = data.get("HTTP_PORT", "80")
 ENABLE_IPV6 = data.get("ENABLE_IPV6", "true")
-SKIP_RSPAMD = data.get("SKIP_RSPAMD", "n")
+SKIP_RSPAMD = data.get("SKIP_RSPAMD", "y")
 nginx_mailcow = {
     "NGINX_USE_PROXY_PROTOCOL": NGINX_USE_PROXY_PROTOCOL,
     "REDISHOST": REDISHOST,

@@ -29,6 +29,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/nginx-mailcow-app.pid --cidfil
     --volume %S/mailcow/data/web/inc/functions.auth.inc.php:/mailcowauth/functions.auth.inc.php:z \
     --volume %S/mailcow/data/web/inc/sessions.inc.php:/mailcowauth/sessions.inc.php:z \
     --volume sogo-web-vol-1:/usr/lib/GNUstep/SOGo:Z \
+    -env PHPFPMHOST=php-fpm-mailcow-app \
     --env-file nginx-mailcow.env ${NGINX_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/nginx-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP nginx-mailcow-app
