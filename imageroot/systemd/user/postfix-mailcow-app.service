@@ -20,7 +20,7 @@ ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/postfix-mailcow-app.pid  --cidfile %t/postfix-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  postfix-mailcow-app   \
     --volume hooks-postfix:/hooks:Z \
     --volume conf-postfix:/opt/postfix/conf:z \
-    --volume assets-ssl:/etc/ssl/mail/:ro,z \
+    --volume ssl:/etc/ssl/mail/:ro,z \
     --volume postfix-vol-1:/var/spool/postfix:Z \
     --volume crypt-vol-1:/var/lib/zeyple:Z \
     --volume rspamd-vol-1:/var/lib/rspamd:Z \

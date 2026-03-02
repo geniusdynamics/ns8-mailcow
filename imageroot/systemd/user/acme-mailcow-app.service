@@ -19,9 +19,9 @@ ExecStartPre=/bin/rm -f %t/acme-mailcow-app.pid %t/acme-mailcow-app.ctr-id
 ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/acme-mailcow-app.pid  --cidfile %t/acme-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  acme-mailcow-app   \
     --volume web-well-known-acme-challenge:/var/www/acme:z \
-    --volume assets-ssl:/var/lib/acme/:z \
+    --volume ssl:/var/lib/acme/:z \
     --volume assets-ssl-example:/var/lib/ssl-example/:ro,Z \
-    --volume mysql-socket-vol:/var/run/mysqld/:z   \
+    --volume mysql-socket-vol:/var/run/mysqld/:z \
     --volume %S/bin/acme/:/srv:z,rw \
     --env-file acme-mailcow.env  ${ACME_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/acme-mailcow-app.ctr-id -t 10
