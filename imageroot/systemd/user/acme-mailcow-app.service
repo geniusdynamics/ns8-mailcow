@@ -22,7 +22,11 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/acme-mailcow-app.pid  --cidfil
     --volume ssl:/var/lib/acme/:z \
     --volume assets-ssl-example:/var/lib/ssl-example/:ro,Z \
     --volume mysql-socket-vol:/var/run/mysqld/:z \
-    --volume %S/bin/acme/:/srv:z,rw \
+    --volume %S/bin/acme/acme.sh:/srv/acme.sh:Z \
+    --volume %S/bin/acme/expand6.sh:/srv/expand6.sh:Z \
+    --volume %S/bin/acme/functions.sh:/srv/functions.sh:Z \
+    --volume %S/bin/acme/obtain-certificate.sh:/srv/obtain-certificate.sh:Z \
+    --volume %S/bin/acme/reload-configurations.sh:/srv/reload-configurations.sh:Z \
     --env-file acme-mailcow.env  ${ACME_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/acme-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP acme-mailcow-app
