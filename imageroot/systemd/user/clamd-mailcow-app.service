@@ -9,14 +9,12 @@ After=mailcow.service unbound-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
-EnvironmentFile=%S/state/environment
-EnvironmentFile=-%S/state/smarthost.env
-WorkingDirectory=%S/state
+EnvironmentFile=%E/state/environment
+WorkingDirectory=%E/state
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/clamd-mailcow-app.pid %t/clamd-mailcow-app.ctr-id
-ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/clamd-mailcow-app.pid  --cidfile %t/clamd-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  clamd-mailcow-app   \
     --volume conf-clamav:/etc/clamav/:Z \
     --volume clamd-db-vol:/var/lib/clamav:Z   \

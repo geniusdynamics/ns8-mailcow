@@ -10,14 +10,12 @@ After=mailcow.service redis-mailcow-app.service php-fpm-mailcow-app.service sogo
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
-EnvironmentFile=%S/state/environment
-EnvironmentFile=-%S/state/smarthost.env
-WorkingDirectory=%S/state
+EnvironmentFile=%E/state/environment
+WorkingDirectory=%E/state
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/nginx-mailcow-app.pid %t/nginx-mailcow-app.ctr-id
-ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/nginx-mailcow-app.pid --cidfile %t/nginx-mailcow-app.ctr-id --cgroups=no-conmon --pod-id-file %t/mailcow.pod-id --replace -d --name nginx-mailcow-app \
     --volume %S/mailcow/data/web:/web:ro,z \
     --volume %S/mailcow/data/conf/rspamd/dynmaps:/dynmaps:ro,z \
