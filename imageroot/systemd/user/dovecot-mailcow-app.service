@@ -9,14 +9,12 @@ After=mailcow.service mysql-mailcow-app.service netfilter-mailcow-app.service re
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
-EnvironmentFile=%S/state/environment
-EnvironmentFile=-%S/state/smarthost.env
-WorkingDirectory=%S/state
+EnvironmentFile=%E/state/environment
+WorkingDirectory=%E/state
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/dovecot-mailcow-app.pid %t/dovecot-mailcow-app.ctr-id
-ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/dovecot-mailcow-app.pid --cidfile %t/dovecot-mailcow-app.ctr-id --cgroups=no-conmon --pod-id-file %t/mailcow.pod-id --replace -d --name dovecot-mailcow-app \
     --volume %S/mailcow/data/hooks/dovecot:/hooks:Z \
     --volume %S/mailcow/data/conf/dovecot:/etc/dovecot:z \

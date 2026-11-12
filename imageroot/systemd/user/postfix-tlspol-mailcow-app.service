@@ -9,14 +9,12 @@ After=mailcow.service unbound-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
-EnvironmentFile=%S/state/environment
-EnvironmentFile=-%S/state/smarthost.env
-WorkingDirectory=%S/state
+EnvironmentFile=%E/state/environment
+WorkingDirectory=%E/state
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/postfix-tlspol-mailcow-app.pid %t/postfix-tlspol-mailcow-app.ctr-id
-ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/postfix-tlspol-mailcow-app.pid  --cidfile %t/postfix-tlspol-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  postfix-tlspol-mailcow-app   \
     --volume postfix-tlspol-vol-1:/var/lib/postfix-tlspol:Z   \
     --env-file postfix-tlspol-mailcow.env  ${POSTFIX_TLSPOL_IMAGE}

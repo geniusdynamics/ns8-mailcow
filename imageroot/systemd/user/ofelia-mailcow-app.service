@@ -10,14 +10,12 @@ After=mailcow.service sogo-mailcow-app.service dovecot-mailcow-app.service
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
 Environment=XDG_RUNTIME_DIR=/run/user/%U
-EnvironmentFile=%S/state/environment
-EnvironmentFile=-%S/state/smarthost.env
-WorkingDirectory=%S/state
+EnvironmentFile=%E/state/environment
+WorkingDirectory=%E/state
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/ofelia-mailcow-app.pid %t/ofelia-mailcow-app.ctr-id
-ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/ofelia-mailcow-app.pid  --cidfile %t/ofelia-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  ofelia-mailcow-app   \
     --volume  ${XDG_RUNTIME_DIR}/podman/podman.sock:/var/run/docker.sock:ro,z   \
     --env-file ofelia-mailcow.env  ${OFELIA_IMAGE}
