@@ -49,7 +49,7 @@ buildah config --entrypoint=/ \
     --label="org.nethserver.authorizations=traefik@node:routeadm" \
     --label="org.nethserver.tcp-ports-demand=1" \
     --label="org.nethserver.rootfull=0" \
-    --label="org.nethserver.images=ghcr.io/mailcow/unbound:1.24 ghcr.io/mailcow/clamd:1.71 ghcr.io/mailcow/sogo:5.12.4-1 ghcr.io/mailcow/dovecot:2.3.21.1-1 ghcr.io/mailcow/postfix-tlspol:1.8.22 ghcr.io/mailcow/nginx:1.05 ghcr.io/mailcow/dockerapi:2.11 ghcr.io/mailcow/olefy:1.15 docker.io/library/mariadb:10.11 ghcr.io/mailcow/postfix:3.7.11-1 docker.io/library/memcached:alpine ghcr.io/mailcow/acme:1.95 ghcr.io/mailcow/netfilter:1.63 ghcr.io/mailcow/watchdog:2.09 docker.io/library/redis:7.4.6-alpine ghcr.io/mailcow/rspamd:3.14.2 docker.io/mcuadros/ofelia:latest ghcr.io/mailcow/phpfpm:8.2.29-1" \
+    --label="org.nethserver.images=ghcr.io/mailcow/unbound:1.25 ghcr.io/mailcow/clamd:1.71 ghcr.io/mailcow/sogo:5.12.13-1 ghcr.io/mailcow/dovecot:2.3.21.1-1 ghcr.io/mailcow/postfix-tlspol:1.14.5 ghcr.io/mailcow/nginx:1.06 ghcr.io/mailcow/dockerapi:2.16 ghcr.io/mailcow/olefy:1.16 docker.io/library/mariadb:10.11.19 ghcr.io/mailcow/postfix:3.10.13-1 docker.io/library/memcached:alpine ghcr.io/mailcow/acme:1.99 ghcr.io/mailcow/netfilter:1.67 ghcr.io/mailcow/watchdog:2.13 docker.io/library/redis:8.10.3-alpine3.23 ghcr.io/mailcow/rspamd:3.14.2 docker.io/mcuadros/ofelia:v3.0.8 ghcr.io/mailcow/phpfpm:8.2.35-1" \
     "${container}"
 # Commit the image
 buildah commit "${container}" "${repobase}/${reponame}"
