@@ -6,14 +6,14 @@
   "categories": [],
   "authors": [
     {
-      "name": "Name Surname",
-      "email": "author@yourmail.org"
+      "name": "Genius Dynamics",
+      "email": "support@genius.ke"
     }
   ],
   "docs": {
     "documentation_url": "https://docs.mailcow.com/",
-    "bug_url": "https://github.com/NethServer/dev",
-    "code_url": "https://github.com/author/ns8-mailcow"
+    "bug_url": "https://github.com/geniusdynamics/ns8-mailcow/issues",
+    "code_url": "https://github.com/geniusdynamics/ns8-mailcow"
   },
-  "source": "ghcr.io/nethserver/mailcow"
+  "source": "ghcr.io/geniusdynamics/mailcow"
 }

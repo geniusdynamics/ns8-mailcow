@@ -10,14 +10,12 @@ After=mailcow.service
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
 Environment=XDG_RUNTIME_DIR=/run/user/%U
-EnvironmentFile=%S/state/environment
-EnvironmentFile=-%S/state/smarthost.env
-WorkingDirectory=%S/state
+EnvironmentFile=%E/state/environment
+WorkingDirectory=%E/state
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/dockerapi.pid %t/dockerapi.ctr-id
-ExecStartPre=-runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/dockerapi.pid  --cidfile %t/dockerapi.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  dockerapi   \
     --volume ${XDG_RUNTIME_DIR}/podman/podman.sock:/var/run/docker.sock:ro,z \
     --env-file dockerapi-mailcow.env  ${DOCKERAPI_IMAGE}
