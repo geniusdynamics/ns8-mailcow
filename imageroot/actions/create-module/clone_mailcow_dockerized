@@ -1,17 +1,42 @@
 #!/usr/bin/env bash
 
-set -e # Exit immediately if a command fails
+#
+# Copyright (C) 2026 Genius Dynamics
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
 
-REPO_URL="https://github.com/mailcow/mailcow-dockerized.git"
+# Download mailcow-dockerized at a fixed upstream commit. The node has no
+# git, so fetch the commit as a tarball.
+set -e
+exec 1>&2
+
 COMMIT_HASH="4845928e7ada830de451a2e6125a03840b9fdb62"
 TARGET_DIR="../mailcow"
 
-echo "Cloning repository..."
-git clone "$REPO_URL" "$TARGET_DIR"
+if [ -d "$TARGET_DIR" ] && [ -f "$TARGET_DIR/docker-compose.yml" ]; then
+    echo "mailcow-dockerized is already present"
+    exit 0
+fi
 
-cd "$TARGET_DIR"
+mkdir -p "$TARGET_DIR"
+python3 - "$COMMIT_HASH" "$TARGET_DIR" <<'PY'
+import io
+import sys
+import tarfile
+import urllib.request
 
-echo "Checking out specific commit..."
-git checkout "$COMMIT_HASH"
-
-echo "Done. Repository is now at commit $COMMIT_HASH"
+commit, target = sys.argv[1], sys.argv[2]
+url = f"https://github.com/mailcow/mailcow-dockerized/archive/{commit}.tar.gz"
+print(f"Downloading {url}")
+with urllib.request.urlopen(url, timeout=120) as resp:
+    data = resp.read()
+with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as tar:
+    for member in tar.getmembers():
+        # drop the leading mailcow-dockerized-<commit>/ directory
+        parts = member.name.split("/", 1)
+        if len(parts) < 2 or not parts[1]:
+            continue
+        member.name = parts[1]
+        tar.extract(member, target)
+print(f"mailcow-dockerized {commit} extracted to {target}")
+PY
