@@ -1,249 +1,262 @@
 # ns8-mailcow
 
-Mail server module for [NethServer 8](https://github.com/NethServer/ns8-core) based on [mailcow-dockerized](https://mailcow.email/).
+Module id: `mailcow`. Images are pinned in `build-images.sh` and updated through reviewed changes.
 
 ## Install
 
-Instantiate the module with:
+```bash
+add-module ghcr.io/geniusdynamics/mailcow:latest 1
+```
 
-    add-module ghcr.io/geniusdynamics/mailcow:latest 1
-
-The output of the command will return the instance name.
-Output example:
-
-    {"module_id": "mailcow1", "image_name": "mailcow", "image_url": "ghcr.io/geniusdynamics/mailcow:latest"}
+The command returns the instance id, for example `mailcow1`. Use the id NS8 returns.
 
 ## Configure
 
-Launch `configure-module`, by setting the following parameters:
-
-- `host`: a fully qualified domain name for the application
-- `http2https`: enable or disable HTTP to HTTPS redirection (true/false)
-- `lets_encrypt`: enable or disable Let's Encrypt certificate (true/false)
-
-Example:
-
-```
-api-cli run configure-module --agent module/mailcow1 --data - <<EOF
+```bash
+api-cli run configure-module --agent module/mailcow1 --data - <<'EOF'
 {
-  "host": "mailcow.domain.com",
+  "host": "mailcow.example.org",
   "http2https": true,
-  "lets_encrypt": true
+  "lets_encrypt": false
 }
 EOF
 ```
 
-The above command will:
+| Parameter | Required | Type | Description |
+|---|---|---|---|
+| `host` | yes | string | Host name for the application, like 'mailcow.domain.org' |
+| `lets_encrypt` | yes | boolean | Request a valid Let's Encrypt certificate. |
+| `http2https` | yes | boolean | Redirect all the HTTP requests to HTTPS |
 
-- start and configure the mailcow instance
-- configure a virtual host for traefik to access the instance
+## Configuration output
 
-## Advanced Settings
+`get-configuration` returns: `host`, `lets_encrypt`, `http2https`.
 
-The module supports extensive advanced configuration options accessible through the web UI:
+## Images
 
-### Time Settings
+| Image | Version |
+|---|---|
+| `docker.io/library/mariadb` | `10.11.19` |
+| `docker.io/library/redis` | `7.4.12-alpine` |
+| `ghcr.io/mailcow/unbound` | `1.24` |
+| `ghcr.io/mailcow/clamd` | `1.71` |
+| `ghcr.io/mailcow/rspamd` | `3.14.2` |
+| `ghcr.io/mailcow/phpfpm` | `8.2.29-1` |
+| `ghcr.io/mailcow/sogo` | `5.12.4-1` |
+| `ghcr.io/mailcow/dovecot` | `2.3.21.1-1` |
+| `ghcr.io/mailcow/postfix` | `3.7.11-1` |
+| `ghcr.io/mailcow/postfix-tlspol` | `1.8.22` |
+| `docker.io/library/memcached` | `1.6.45-alpine` |
+| `ghcr.io/mailcow/nginx` | `1.05` |
+| `ghcr.io/mailcow/acme` | `1.95` |
+| `ghcr.io/mailcow/netfilter` | `1.63` |
+| `ghcr.io/mailcow/watchdog` | `2.09` |
+| `ghcr.io/mailcow/dockerapi` | `2.11` |
+| `ghcr.io/mailcow/olefy` | `1.15` |
+| `docker.io/mcuadros/ofelia` | `v3.0.8` |
 
-- Timezone (TZ)
+## Network and access
 
-### Network Settings
+- Reserves 1 TCP port(s) on the node. The web application is published through Traefik on the configured host name.
+- Runs rootless.
+- Declares these NS8 authorizations: `traefik@node:routeadm`.
 
-- IPv4 Network (default: 172.22.1)
-- IPv6 Network (default: fd4d:6169:6c63:6f77::/64)
-- Enable IPv6
+## Backup
 
-### Service Skipping
+The following paths are included in the NS8 backup (`imageroot/etc/state-include.conf`):
 
-- Skip SOGo (webmail)
-- Skip ClamAV (antivirus)
-- Skip Rspamd (spam filter)
-- Skip Let's Encrypt
-- Skip Full-Text Search (FTS)
-- Skip OLEFY (Office document scanning)
+- `state/unbound-mailcow.env`
+- `volumes/hooks-unbound`
+- `volumes/conf-unbound-unboundconf`
+- `state/clamd-mailcow.env`
+- `volumes/conf-clamav-`
+- `volumes/clamd-db-vol-1`
+- `state/sogo-mailcow.env`
+- `volumes/hooks-sogo`
+- `volumes/conf-sogo-`
+- `volumes/web-inc-initdbincphp`
+- `volumes/conf-sogo-custom-faviconico`
+- `volumes/conf-sogo-custom-shortlogosvg`
+- `volumes/conf-sogo-custom-fulllogosvg`
+- `volumes/conf-sogo-custom-fulllogopng`
+- `volumes/conf-sogo-custom-themejs`
+- `volumes/conf-sogo-custom-sogojs`
+- `volumes/mysql-socket-vol-1`
+- `volumes/sogo-web-vol-1`
+- `volumes/sogo-userdata-backup-vol-1`
+- `state/dovecot-mailcow.env`
+- `volumes/hooks-dovecot`
+- `volumes/conf-dovecot`
+- `volumes/assets-ssl`
+- `volumes/conf-sogo-`
+- `volumes/phpfpm-sogo-sso-`
+- `volumes/vmail-vol-1`
+- `volumes/vmail-index-vol-1`
+- `volumes/crypt-vol-1`
+- `volumes/rspamd-custom-`
+- `volumes/assets-templates`
+- `volumes/rspamd-vol-1`
+- `volumes/mysql-socket-vol-1`
+- `state/postfix-tlspol-mailcow.env`
+- `volumes/postfix-tlspol-vol-1`
+- `state/nginx-mailcow.env`
+- `volumes/data-web`
+- `volumes/conf-rspamd-dynmaps`
+- `volumes/assets-ssl-`
+- `volumes/conf-nginx-`
+- `volumes/conf-rspamd-metaexporter`
+- `volumes/dovecot-auth-mailcowauthphp`
+- `volumes/web-inc-functionsincphp`
+- `volumes/web-inc-functionsauthincphp`
+- `volumes/web-inc-sessionsincphp`
+- `volumes/sogo-web-vol-1`
+- `state/dockerapi-mailcow.env`
+- `volumes/run-dockersock`
+- `state/olefy-mailcow.env`
+- `state/mysql-mailcow.env`
+- `volumes/mysql-vol-1`
+- `volumes/mysql-socket-vol-1`
+- `volumes/conf-mysql-`
+- `state/postfix-mailcow.env`
+- `volumes/hooks-postfix`
+- `volumes/conf-postfix`
+- `volumes/assets-ssl`
+- `volumes/postfix-vol-1`
+- `volumes/crypt-vol-1`
+- `volumes/rspamd-vol-1`
+- `volumes/mysql-socket-vol-1`
+- `state/memcached-mailcow.env`
+- `state/acme-mailcow.env`
+- `volumes/web-well-known-acme-challenge`
+- `volumes/assets-ssl`
+- `volumes/assets-ssl-example`
+- `volumes/mysql-socket-vol-1`
+- `state/netfilter-mailcow.env`
+- `volumes/lib-modules`
+- `state/watchdog-mailcow.env`
+- `volumes/rspamd-vol-1`
+- `volumes/mysql-socket-vol-1`
+- `volumes/postfix-vol-1`
+- `volumes/assets-ssl`
+- `state/redis-mailcow.env`
+- `volumes/redis-vol-1`
+- `volumes/conf-redis-redis-confsh`
+- `state/rspamd-mailcow.env`
+- `volumes/hooks-rspamd`
+- `volumes/rspamd-custom-`
+- `volumes/rspamd-overrided-`
+- `volumes/rspamd-locald-`
+- `volumes/rspamd-pluginsd-`
+- `volumes/rspamd-lua-`
+- `volumes/conf-rspamd-rspamdconflocal`
+- `volumes/conf-rspamd-rspamdconfoverride`
+- `volumes/rspamd-vol-1`
+- `state/ofelia-mailcow.env`
+- `volumes/run-dockersock`
+- `state/php-fpm-mailcow.env`
+- `volumes/hooks-phpfpm`
+- `volumes/data-web`
+- `volumes/conf-rspamd-dynmaps`
+- `volumes/rspamd-custom-`
+- `volumes/dovecot-auth-mailcowauthphp`
+- `volumes/web-inc-functionsincphp`
+- `volumes/web-inc-functionsauthincphp`
+- `volumes/web-inc-sessionsincphp`
+- `volumes/web-inc-functionsmailboxincphp`
+- `volumes/web-inc-functionsratelimitincphp`
+- `volumes/web-inc-functionsaclincphp`
+- `volumes/rspamd-vol-1`
+- `volumes/mysql-socket-vol-1`
+- `volumes/conf-sogo-`
+- `volumes/conf-rspamd-metaexporter`
+- `volumes/conf-phpfpm-crons`
+- `volumes/phpfpm-sogo-sso-`
+- `volumes/phpfpm-php-fpmd-poolsconf`
+- `volumes/phpfpm-php-confd-opcache-recommendedini`
+- `volumes/phpfpm-php-confd-uploadini`
+- `volumes/phpfpm-php-confd-otherini`
+- `volumes/conf-dovecot-globalsievebefore`
+- `volumes/conf-dovecot-globalsieveafter`
+- `volumes/assets-templates`
+- `volumes/conf-nginx-`
 
-### Ports Configuration
+## Services
 
-- HTTP Port (default: 80)
-- HTTPS Port (default: 443)
-- SMTP Port (default: 25)
-- SMTPS Port (default: 465)
-- Submission Port (default: 587)
-- IMAP Port (default: 143)
-- IMAPS Port (default: 993)
-- POP Port (default: 110)
-- POPS Port (default: 995)
-- Sieve Port (default: 4190)
-
-### Security Settings
-
-- Password Scheme (BLF-CRYPT, ARGON2, SHA512, SHA256, MD5)
-- Master Account
-- Allow Admin Email Login
-- ACL Anyone
-
-### Logging
-
-- Log Lines
-- Developer Mode
-
-### SOGo Settings
-
-- SOGo Session Expiry (minutes)
-
-### Dovecot Settings
-
-- Maildir Garbage Collection Time
-- Maildir Subfolders
-- FTS Processes
-- FTS Heap Size
-
-### ACME Settings
-
-- Additional SAN
-- Let's Encrypt Staging
-- Skip IP Check
-- Only Mailcow Hostname
-- Directory URL
-
-### Netfilter Settings
-
-- Disable Isolation Rule
-- Mailcow Replica IP
-
-## Exposed Ports
-
-The following ports are exposed on 127.0.0.1 for mail services:
-
-| Service        | Port |
-| -------------- | ---- |
-| HTTP (web UI)  | 80   |
-| HTTPS (web UI) | 443  |
-| SMTP           | 25   |
-| SMTPS          | 465  |
-| Submission     | 587  |
-| IMAP           | 143  |
-| IMAPS          | 993  |
-| POP3           | 110  |
-| POP3S          | 995  |
-| Sieve          | 4190 |
-
-The web UI is accessible via Traefik using the configured hostname. Mail services are exposed directly on localhost for external mail server communication.
+- `acme-mailcow-app.service`
+- `clamd-mailcow-app.service`
+- `dockerapi.service`
+- `dovecot-mailcow-app.service`
+- `mailcow.service`
+- `memcached-mailcow-app.service`
+- `mysql-mailcow-app.service`
+- `netfilter-mailcow-app.service`
+- `nginx-mailcow-app.service`
+- `ofelia-mailcow-app.service`
+- `olefy-mailcow-app.service`
+- `php-fpm-mailcow-app.service`
+- `postfix-mailcow-app.service`
+- `postfix-tlspol-mailcow-app.service`
+- `redis-mailcow-app.service`
+- `rspamd-mailcow-app.service`
+- `sogo-mailcow-app.service`
+- `unbound-mailcow-app.service`
+- `watchdog-mailcow-app.service`
 
 ## Get the configuration
 
-You can retrieve the configuration with:
-
-```
+```bash
 api-cli run get-configuration --agent module/mailcow1
 ```
 
-## Update
+## Update and uninstall
 
 ```bash
-api-cli run update-module --data '{
-  "module_url": "ghcr.io/geniusdynamics/mailcow:latest",
-  "instances": ["mailcow1"],
-  "force": true
-}'
-
-```
-
-## Uninstall
-
-To uninstall the instance:
-
-    remove-module --no-preserve mailcow1
-
-## Smarthost setting discovery
-
-Some configuration settings, like the smarthost setup, are not part of the
-`configure-module` action input: they are discovered by looking at some
-Redis keys. To ensure the module is always up-to-date with the
-centralized [smarthost
-setup](https://nethserver.github.io/ns8-core/core/smarthost/) every time
-mailcow starts, the command `bin/discover-smarthost` runs and refreshes
-the `state/smarthost.env` file with fresh values from Redis.
-
-Furthermore if smarthost setup is changed when mailcow is already
-running, the event handler `events/smarthost-changed/10reload_services`
-restarts the main module service.
-
-See also the `systemd/user/mailcow.service` file.
-
-This setting discovery is just an example to understand how the module is
-expected to work: it can be rewritten or discarded completely.
-
-## Debug
-
-some CLI are needed to debug
-
-- The module runs under an agent that initiate a lot of environment variables (in /home/mailcow1/.config/state), it could be nice to verify them
-  on the root terminal
-
-      `runagent -m mailcow1 env`
-
-- you can become runagent for testing scripts and initiate all environment variables
-
-  `runagent -m mailcow1`
-
-the path become :
-
-```
-    echo $PATH
-    /home/mailcow1/.config/bin:/usr/local/agent/pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/usr/
-```
-
-- if you want to debug a container or see environment inside
-  `runagent -m mailcow1`
-
-```
-podman ps
-CONTAINER ID  IMAGE                                      COMMAND               CREATED        STATUS        PORTS                    NAMES
-d292c6ff28e9  localhost/podman-pause:4.6.1-1702418000                          9 minutes ago  Up 9 minutes  127.0.0.1:20015->80/tcp  80b8de25945f-infra
-d8df02bf6f4a  docker.io/library/mariadb:10.11.5          --character-set-s...  9 minutes ago  Up 9 minutes  127.0.0.1:20015->80/tcp  mariadb-app
-9e58e5bd676f  docker.io/library/nginx:stable-alpine3.17  nginx -g daemon o...  9 minutes ago  Up 9 minutes  127.0.0.1:20015->80/tcp  mailcow-app
-```
-
-you can see what environment variable is inside the container
-
-```
-podman exec  mailcow-app env
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-TERM=xterm
-PKG_RELEASE=1
-MARIADB_DB_HOST=127.0.0.1
-MARIADB_DB_NAME=mailcow
-MARIADB_IMAGE=docker.io/mariadb:10.11.5
-MARIADB_DB_TYPE=mysql
-container=podman
-NGINX_VERSION=1.24.0
-NJS_VERSION=0.7.12
-MARIADB_DB_USER=mailcow
-MARIADB_DB_PASSWORD=mailcow
-MARIADB_DB_PORT=3306
-HOME=/root
-```
-
-you can run a shell inside the container
-
-```
-podman exec -ti   mailcow-app sh
-/ #
+api-cli run update-module --data '{"module_url":"ghcr.io/geniusdynamics/mailcow:latest","instances":["mailcow1"],"force":true}'
+remove-module --no-preserve mailcow1
 ```
 
 ## Testing
 
-Test the module using the `test-module.sh` script:
+Continuous integration:
 
-    ./test-module.sh <NODE_ADDR> ghcr.io/geniusdynamics/mailcow:latest
+- `Publish images` builds the module image on every push.
+- `Test module` installs the image on a QEMU NS8 node and runs the Robot Framework suite in `tests/`. It runs after `Publish images` succeeds on `dev` and on `main`.
+- `Build API JSON Schema docs` and the security scan run alongside.
 
-The tests are made using [Robot Framework](https://robotframework.org/)
+The suite installs the module, configures a host name, checks that the web application answers through Traefik, takes UI screenshots and removes the module.
 
-## UI translation
+Run it locally with the NS8 standard infrastructure described in the [ns8-github-actions README](https://github.com/NethServer/ns8-github-actions/blob/v1/README.md#running-tests-locally).
 
-Translated with [Weblate](https://hosted.weblate.org/projects/ns8/).
+## Open items
 
-To setup the translation process:
+Found by the NS8 module standards check. These must be resolved before a stable release:
 
-- add [GitHub Weblate app](https://docs.weblate.org/en/latest/admin/continuous.html#github-setup) to your repository
-- add your repository to [hosted.weblate.org]((https://hosted.weblate.org) or ask a NethServer developer to add it to ns8 Weblate project
+- The module description is still the template text: write a description of at least 60 characters in ui/public/metadata.json
+- metadata: documentation_url is a placeholder
+- metadata: categories empty (use standard categories)
+- metadata: description.en needs >= 60 real chars (+ it translation)
+- ACME_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- CLAMD_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- DOCKERAPI_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- DOVECOT_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- MEMCACHED_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- NETFILTER_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- NGINX_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- OFELIA_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- OLEFY_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- PHPFPM_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- POSTFIX_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- POSTFIX_TLSPOL_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- REDIS_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- RSPAMD_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- SOGO_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- UNBOUND_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+- WATCHDOG_IMAGE is used by the module but no image in the label provides it: leftover from the template?
+
+## Upstream
+
+Application documentation: https://docs.mailcow.com/
+
+## License
+
+GPL-3.0-or-later. See [LICENSE](LICENSE).
