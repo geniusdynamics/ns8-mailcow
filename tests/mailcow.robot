@@ -49,11 +49,12 @@ Server greets
     [Arguments]    ${port}    ${expected}    ${tls}=${EMPTY}
     ${banner}    ${rc} =    Execute Command    python3 ${MAILCHECK} banner 127.0.0.1 ${port} ${tls}    return_rc=True
     Should Be Equal As Integers    ${rc}    0    no answer on port ${port}: ${banner}
-    Should Contain    ${banner}    ${expected}
+    Should Match Regexp    ${banner}    ${expected}
 
 SMTP answers
-    Server greets    25    220 ${HOST} ESMTP
-    Server greets    587    220 ${HOST} ESMTP
+    # postscreen (port 25) starts with a multi-line "220-" greeting
+    Server greets    25    ^220[ -]${HOST} ESMTP
+    Server greets    587    ^220 ${HOST} ESMTP
 
 F2B option manage_external is
     [Arguments]    ${expected}
@@ -74,8 +75,8 @@ CrowdSec has the mailcow parser
 
 CrowdSec explains
     [Arguments]    ${line}    ${expected}
-    # A public address instead of 127.0.0.1, which the whitelist parser skips
-    ${line} =    Replace String Using Regexp    ${line}    127\\.0\\.0\\.1    203.0.113.5
+    # A public address: the whitelist parser skips private ones
+    ${line} =    Replace String Using Regexp    ${line}    \\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b    203.0.113.5
     ${output}    ${rc} =    Execute Command    podman exec ${crowdsec_id} cscli explain --type syslog --log '${line}'    return_rc=True
     Should Be Equal As Integers    ${rc}    0    ${output}
     Should Contain    ${output}    ${expected}
@@ -131,13 +132,13 @@ Check if the mail ports are open on the node firewall
 
 Check if SMTP answers
     Wait Until Keyword Succeeds    20 min    15 sec    SMTP answers
-    Server greets    465    220 ${HOST} ESMTP    tls
+    Server greets    465    ^220 ${HOST} ESMTP    tls
 
 Check if IMAP answers
-    Wait Until Keyword Succeeds    10 min    15 sec    Server greets    143    * OK
-    Server greets    993    * OK    tls
-    Server greets    110    +OK
-    Server greets    4190    "IMPLEMENTATION"
+    Wait Until Keyword Succeeds    10 min    15 sec    Server greets    143    ^\\* OK
+    Server greets    993    ^\\* OK    tls
+    Server greets    110    ^\\+OK
+    Server greets    4190    ^"IMPLEMENTATION"
 
 Check if failed logins reach the journal of the node
     ${result} =    Execute Command    python3 ${MAILCHECK} smtp-auth 127.0.0.1 587 nobody@example.org WrongPassword1
@@ -146,7 +147,7 @@ Check if failed logins reach the journal of the node
     Should Start With    ${result}    rejected
     # Postfix copies its log to /dev/log of the node: the crowdsecurity/postfix
     # collection of NS8 CrowdSec parses these lines
-    Wait Until Keyword Succeeds    2 min    5 sec    Journal of the node has    postfix/smtpd    authentication failed
+    Wait Until Keyword Succeeds    2 min    5 sec    Journal of the node has    postfix/submission/smtpd    authentication failed
     # Lines of the geniusdynamics/mailcow-logs parser
     Wait Until Keyword Succeeds    2 min    5 sec    Journal of the node has    php-fpm-mailcow-app    MAILCOWAUTH: Login failed for user nobody@example.org
 
@@ -173,8 +174,9 @@ Check the CrowdSec rules
     ${line} =    Journal of the node has    php-fpm-mailcow-app    MAILCOWAUTH: Login failed
     CrowdSec explains    ${line}    geniusdynamics/mailcow-logs
     CrowdSec explains    ${line}    geniusdynamics/mailcow-bf
-    ${line} =    Journal of the node has    postfix/smtpd    authentication failed
+    ${line} =    Journal of the node has    postfix/submission/smtpd    authentication failed
     CrowdSec explains    ${line}    crowdsecurity/postfix-logs
+    CrowdSec explains    ${line}    crowdsecurity/postfix-spam
     [Teardown]    Run Keyword If    '${crowdsec_id}' != ''    Execute Command    remove-module --no-preserve ${crowdsec_id}
 
 Check netfilter in rootful mode
@@ -189,7 +191,7 @@ Check netfilter in disabled mode
     Configure mailcow    disabled
     Unit state is    netfilter-mailcow-app.service    inactive
     SMTP answers
-    Server greets    143    * OK
+    Server greets    143    ^\\* OK
     Mailcow UI answers
 
 Check if mailcow is removed correctly

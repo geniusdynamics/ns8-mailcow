@@ -13,7 +13,9 @@ Run it through "podman unshare": the containers chown some files to their
 own users (subordinate UIDs on the host), which only the root of the user
 namespace can replace.
 
-- Files of the release are replaced by the new release.
+- Files of the release are copied when they are new or the release changed
+  them; a file the release did not change is left as it is, since some
+  containers rewrite their configuration at start (Postfix main.cf).
 - Files the containers or the admin created are kept (generated SQL maps,
   extra.cf, extra.conf, vars.local.inc.php...).
 - The customization points of mailcow (rspamd custom maps, SOGo custom
@@ -22,6 +24,7 @@ namespace can replace.
 """
 
 import filecmp
+import hashlib
 import json
 import os
 import shutil
@@ -73,11 +76,24 @@ def preserved(rel):
     return rel.startswith(PRESERVE)
 
 
-def copy_file(rel):
+def sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as fobj:
+        for chunk in iter(lambda: fobj.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def copy_file(rel, digest, previous_digest):
     src = os.path.join(DIST, rel)
     dst = os.path.join(DEST, rel)
     if os.path.lexists(dst):
         if preserved(rel):
+            return
+        if previous_digest == digest:
+            # Same file as the release already copied: the containers may
+            # have rewritten it (e.g. Postfix appends extra.cf and
+            # myhostname to main.cf at each start), keep their version
             return
         if os.path.isfile(dst) and not os.path.islink(dst) and filecmp.cmp(src, dst, shallow=False):
             if (os.stat(src).st_mode & 0o111) != (os.stat(dst).st_mode & 0o111):
@@ -180,16 +196,19 @@ def main():
     os.makedirs(DEST, exist_ok=True)
     try:
         with open(MANIFEST) as fobj:
-            previous = set(json.load(fobj).get("files", []))
+            previous = json.load(fobj).get("files", {})
     except (FileNotFoundError, ValueError):
-        previous = set()
-    files = release_files()
-    for rel in files:
+        previous = {}
+    if isinstance(previous, list):
+        previous = dict.fromkeys(previous, "")
+    files = {}
+    for rel in release_files():
         try:
-            copy_file(rel)
+            files[rel] = sha256(os.path.join(DIST, rel))
+            copy_file(rel, files[rel], previous.get(rel))
         except OSError as ex:
             warn(f"cannot copy {rel}: {ex}")
-    for rel in sorted(previous - set(files)):
+    for rel in sorted(set(previous) - set(files)):
         if preserved(rel):
             continue
         try:

@@ -236,7 +236,7 @@ A unit reports "started" only when its service answers (`bin/wait-ready`): Maria
 unbound answers, PHP-FPM listens (after the database upgrade), SOGo, Dovecot, Postfix and rspamd
 listen, nginx answers HTTP. The first start initializes the database and takes a few minutes.
 
-Logs: `journalctl SYSLOG_IDENTIFIER=postfix-mailcow-app` (any unit name), and `postfix/smtpd` & co.
+Logs: `journalctl SYSLOG_IDENTIFIER=postfix-mailcow-app` (any unit name), and `postfix/smtpd`, `postfix/submission/smtpd` & co.
 for the Postfix copy.
 
 ## Backup

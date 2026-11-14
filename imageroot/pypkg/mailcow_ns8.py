@@ -183,7 +183,7 @@ def mailcow_conf(settings, secrets_map):
         "ENABLE_SSL_SNI": "n",
         "SKIP_IP_CHECK": "y",
         "SKIP_HTTP_VERIFICATION": "y",
-        "SKIP_UNBOUND_HEALTHCHECK": "n",
+        "SKIP_UNBOUND_HEALTHCHECK": "y",  # its ICMP pings fail in a rootless pod
         "SKIP_CLAMD": yes_no(not settings["clamd_enabled"]),
         "SKIP_OLEFY": "n",
         "SKIP_SOGO": "n",
