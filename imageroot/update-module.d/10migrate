@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Genius Dynamics
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Bring a configured instance to this image: configuration tree of the new
+# mailcow release, env files, certificate, mail ports. Releases that ran
+# only the web UI get their mail services here.
+
+import os
+import shutil
+import subprocess
+import sys
+import agent
+import mailcow_ns8
+
+os.chdir(os.environ["AGENT_STATE_DIR"])
+
+agent.assert_exp(agent.add_public_service(os.environ["MODULE_ID"], mailcow_ns8.MAIL_PORTS))
+
+if not os.getenv("TRAEFIK_HOST"):
+    sys.exit(0) # not configured yet
+
+settings = mailcow_ns8.settings_from_env()
+agent.set_env("MAILCOW_HOSTNAME", settings["host"])
+agent.set_env("NETFILTER_MODE", settings["netfilter_mode"])
+agent.set_env("CLAMD_ENABLED", settings["clamd_enabled"])
+agent.set_env("MAILCOW_RELEASE", mailcow_ns8.dist_value("RELEASE"))
+agent.dump_env()
+
+sync = subprocess.run(["podman", "unshare", os.path.join(os.environ["AGENT_INSTALL_DIR"], "bin", "sync-mailcow-data")])
+agent.assert_exp(sync.returncode == 0, "sync-mailcow-data failed")
+mailcow_ns8.write_env_files(settings)
+
+os.makedirs("ssl", exist_ok=True)
+agent.run_helper('get-certificate', '--cert-file=ssl/cert.pem', '--key-file=ssl/key.pem', settings["host"])
+if not os.path.exists("ssl/dhparams.pem"):
+    shutil.copyfile(os.path.join(os.environ["AGENT_INSTALL_DIR"], "mailcow-dist/assets/ssl-example/dhparams.pem"),
+                    "ssl/dhparams.pem")
+open(".restart-required", "w").close()

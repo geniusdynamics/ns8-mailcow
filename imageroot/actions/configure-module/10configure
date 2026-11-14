@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Genius Dynamics
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Store the settings, prepare the mailcow configuration tree and the env
+# files of the containers. Secrets stay in 0600 files (secrets.env,
+# mailcow.env, mysql.env), never in the module environment.
+
+import json
+import os
+import subprocess
+import sys
+import agent
+import mailcow_ns8
+
+data = json.load(sys.stdin)
+current = mailcow_ns8.settings_from_env()
+
+settings = {
+    "host": data["host"],
+    "http2https": data.get("http2https", True),
+    "lets_encrypt": data.get("lets_encrypt", False),
+    "netfilter_mode": data.get("netfilter_mode", current["netfilter_mode"]),
+    "clamd_enabled": data.get("clamd_enabled", current["clamd_enabled"]),
+}
+if settings["netfilter_mode"] not in mailcow_ns8.NETFILTER_MODES:
+    settings["netfilter_mode"] = mailcow_ns8.DEFAULT_NETFILTER_MODE
+
+agent.set_env("TRAEFIK_HOST", settings["host"])
+agent.set_env("TRAEFIK_HTTP2HTTPS", settings["http2https"])
+agent.set_env("TRAEFIK_LETS_ENCRYPT", settings["lets_encrypt"])
+agent.set_env("MAILCOW_HOSTNAME", settings["host"])
+agent.set_env("NETFILTER_MODE", settings["netfilter_mode"])
+agent.set_env("CLAMD_ENABLED", settings["clamd_enabled"])
+agent.set_env("MAILCOW_RELEASE", mailcow_ns8.dist_value("RELEASE"))
+
+# Copy the configuration of the vendored mailcow-dockerized release: some
+# files belong to the users of the containers, so run as root of the user
+# namespace
+sync = subprocess.run(["podman", "unshare", os.path.join(os.environ["AGENT_INSTALL_DIR"], "bin", "sync-mailcow-data")])
+agent.assert_exp(sync.returncode == 0, "sync-mailcow-data failed")
+
+changed = mailcow_ns8.write_env_files(settings)
+if changed or settings["host"] != current["host"]:
+    # 80start_services restarts the pod
+    open(".restart-required", "w").close()
+
+agent.dump_env()

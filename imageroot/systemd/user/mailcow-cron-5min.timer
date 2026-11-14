@@ -1,0 +1,15 @@
+#
+# Copyright (C) 2026 Genius Dynamics
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=mailcow 5min jobs
+
+[Timer]
+OnCalendar=*:0/5
+AccuracySec=1s
+Unit=mailcow-cron@5min.service
+
+[Install]
+WantedBy=timers.target

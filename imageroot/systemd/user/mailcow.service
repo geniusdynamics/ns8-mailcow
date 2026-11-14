@@ -1,37 +1,39 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
 #
-# This systemd unit starts a mailcow instance using Podman.
-# Most parts of this file come from podman-generate-systemd.
+# The mailcow pod. Its containers share one network namespace, so they reach
+# each other on the loopback (see bin/create-pod) and use unbound as DNS
+# server. The pod publishes the mail ports on the node and the nginx port on
+# 127.0.0.1:TCP_PORT for Traefik.
 #
-# Only the web UI runs: MariaDB, Redis, memcached, dockerapi, PHP-FPM and
-# nginx. The UI refuses to load unless tcp://dockerapi:443 answers, so the
-# pod maps that name to 127.0.0.1 and nginx keeps its HTTPS server on 8443. The
-# mail services (postfix, dovecot, rspamd, clamd, SOGo...) need public mail
-# ports, a docker API socket and their own configuration: their units are
-# kept but not started yet. See README.md.
+# Optional units, started by configure-module according to the settings,
+# are not listed here: clamd-mailcow-app (clamd_enabled) and
+# netfilter-mailcow-app (netfilter_mode).
 #
 
 [Unit]
-Description=Podman mailcow.service
-Requires=mysql-mailcow-app.service redis-mailcow-app.service memcached-mailcow-app.service dockerapi.service php-fpm-mailcow-app.service nginx-mailcow-app.service
-Before=mysql-mailcow-app.service redis-mailcow-app.service memcached-mailcow-app.service dockerapi.service php-fpm-mailcow-app.service nginx-mailcow-app.service
+Description=mailcow pod
+Requires=mysql-mailcow-app.service redis-mailcow-app.service memcached-mailcow-app.service unbound-mailcow-app.service dockerapi.service php-fpm-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service postfix-mailcow-app.service olefy-mailcow-app.service rspamd-mailcow-app.service nginx-mailcow-app.service
+Before=mysql-mailcow-app.service redis-mailcow-app.service memcached-mailcow-app.service unbound-mailcow-app.service dockerapi.service php-fpm-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service postfix-mailcow-app.service olefy-mailcow-app.service rspamd-mailcow-app.service nginx-mailcow-app.service clamd-mailcow-app.service netfilter-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
-EnvironmentFile=-%E/state/environment
+EnvironmentFile=%E/state/environment
+WorkingDirectory=%E/state
 Restart=always
+RestartSec=10
 TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/mailcow.pid %t/mailcow.pod-id
-ExecStartPre=/usr/bin/podman pod create --infra-conmon-pidfile %t/mailcow.pid  --pod-id-file %t/mailcow.pod-id  --name mailcow  --publish 127.0.0.1:${TCP_PORT}:80 --add-host dockerapi:127.0.0.1 --replace
+ExecStartPre=%E/bin/create-pod %t
 ExecStart=/usr/bin/podman pod start --pod-id-file %t/mailcow.pod-id
 ExecStop=/usr/bin/podman pod stop --ignore --pod-id-file %t/mailcow.pod-id -t 10
 ExecStopPost=/usr/bin/podman pod rm --ignore -f --pod-id-file %t/mailcow.pod-id
 PIDFile=%t/mailcow.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

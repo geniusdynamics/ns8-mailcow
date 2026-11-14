@@ -1,11 +1,11 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
 [Unit]
-Description=Podman  postfix-tlspol-mailcow-app.service
-After=mailcow.service unbound-mailcow-app.service
+Description=mailcow postfix-tlspol (MTA-STS and DANE policies)
+BindsTo=mailcow.service
+After=mailcow.service redis-mailcow-app.service unbound-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -13,18 +13,20 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=300
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/postfix-tlspol-mailcow-app.pid %t/postfix-tlspol-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/postfix-tlspol-mailcow-app.pid  --cidfile %t/postfix-tlspol-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  postfix-tlspol-mailcow-app   \
-    --volume postfix-tlspol-vol-1:/var/lib/postfix-tlspol:Z   \
-    --env-file postfix-tlspol-mailcow.env  ${POSTFIX_TLSPOL_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/postfix-tlspol-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP postfix-tlspol-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/postfix-tlspol-mailcow-app.ctr-id
-PIDFile=%t/postfix-tlspol-mailcow-app.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=postfix-tlspol-mailcow \
+    --env-file=mailcow.env \
+    --volume=postfix-tlspol-vol-1:/var/lib/postfix-tlspol:Z \
+    ${POSTFIX_TLSPOL_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

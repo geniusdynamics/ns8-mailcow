@@ -1,12 +1,14 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
+# The UI and the php-fpm entrypoint find the containers through the Podman
+# API socket of the module user, by their com.docker.compose labels.
 
 [Unit]
-Description=Podman dockerapi.service
+Description=mailcow dockerapi (container status and actions of the mailcow UI)
 BindsTo=mailcow.service
-After=mailcow.service redis-mailcow-app.service
+After=mailcow.service redis-mailcow-app.service podman.socket
 Before=php-fpm-mailcow-app.service
 
 [Service]
@@ -15,19 +17,21 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=300
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/dockerapi.pid %t/dockerapi.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/dockerapi.pid  --cidfile %t/dockerapi.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  dockerapi   \
-    --volume %t/podman/podman.sock:/var/run/docker.sock \
-    --security-opt label=disable \
-    --env-file dockerapi-mailcow.env  ${DOCKERAPI_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/dockerapi.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP dockerapi
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/dockerapi.ctr-id
-PIDFile=%t/dockerapi.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=dockerapi-mailcow \
+    --security-opt=label=disable \
+    --env-file=mailcow.env \
+    --volume=%t/podman/podman.sock:/var/run/docker.sock \
+    ${DOCKERAPI_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

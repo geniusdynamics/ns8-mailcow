@@ -1,0 +1,32 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2026 Genius Dynamics
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# ExecStartPre of netfilter-mailcow-app: set the "Manage Fail2Ban
+# externally" option of mailcow (manage_external in the F2B_OPTIONS key of
+# Redis) from the netfilter_mode setting:
+#
+# - external: netfilter only keeps the ban list (F2B_ACTIVE_BANS), served by
+#   https://HOST/f2b-banlist.php?id=BANLIST_ID; it changes no firewall rule
+# - rootful: netfilter applies the bans itself (bin/netfilter-entrypoint.sh)
+
+set -e
+
+case "${NETFILTER_MODE}" in
+    rootful) manage_external=0 ;;
+    *) manage_external=1 ;;
+esac
+
+script="local raw = redis.call('GET', 'F2B_OPTIONS')
+local opts = {}
+if raw then opts = cjson.decode(raw) end
+opts['manage_external'] = tonumber(ARGV[1])
+redis.call('SET', 'F2B_OPTIONS', cjson.encode(opts))
+return opts['manage_external']"
+
+podman exec redis-mailcow-app sh -c 'exec redis-cli -a "${REDISPASS}" --no-auth-warning EVAL "$1" 0 "$2"' \
+    sh "${script}" "${manage_external}" >&2
+echo "netfilter_mode=${NETFILTER_MODE}: manage_external=${manage_external}" >&2

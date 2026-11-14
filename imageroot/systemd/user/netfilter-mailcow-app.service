@@ -1,11 +1,14 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
+# Started only if netfilter_mode is not "disabled". NET_ADMIN and NET_RAW act
+# on the network namespace of the pod, not on the node: see README.md.
 
 [Unit]
-Description=Podman  netfilter-mailcow-app.service
-After=mailcow.service
+Description=mailcow netfilter (brute-force protection, see the netfilter_mode setting)
+BindsTo=mailcow.service
+After=mailcow.service redis-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -13,18 +16,25 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=300
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/netfilter-mailcow-app.pid %t/netfilter-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/netfilter-mailcow-app.pid  --cidfile %t/netfilter-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  netfilter-mailcow-app   \
-    --volume lib-modules:/lib/modules:ro,z   \
-    --env-file netfilter-mailcow.env  ${NETFILTER_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/netfilter-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP netfilter-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/netfilter-mailcow-app.ctr-id
-PIDFile=%t/netfilter-mailcow-app.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStartPre=%E/bin/netfilter-prepare
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=netfilter-mailcow \
+    --cap-add=NET_ADMIN \
+    --cap-add=NET_RAW \
+    --env=NETFILTER_MODE=${NETFILTER_MODE} \
+    --entrypoint=/bin/sh \
+    --env-file=mailcow.env \
+    --volume=%E/bin/netfilter-entrypoint.sh:/ns8-entrypoint.sh:ro,Z \
+    ${NETFILTER_IMAGE} /ns8-entrypoint.sh
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

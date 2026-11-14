@@ -1,11 +1,15 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
+# Recursive resolver of the pod (pod DNS: 127.0.0.1). rspamd and postfix query
+# DNS blocklists, which refuse queries forwarded by public resolvers.
 
 [Unit]
-Description=Podman  unbound-mailcow-app.service
+Description=mailcow unbound, the DNS resolver of the pod
+BindsTo=mailcow.service
 After=mailcow.service
+Before=dockerapi.service php-fpm-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -13,19 +17,23 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=300
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/unbound-mailcow-app.pid %t/unbound-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/unbound-mailcow-app.pid  --cidfile %t/unbound-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  unbound-mailcow-app   \
-    --volume hooks-unbound:/hooks:Z \
-    --volume conf-unbound-unboundconf:/etc/unbound:ro,Z \
-    --env-file unbound-mailcow.env  ${UNBOUND_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/unbound-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP unbound-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/unbound-mailcow-app.ctr-id
-PIDFile=%t/unbound-mailcow-app.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=unbound-mailcow \
+    --tty \
+    --env-file=mailcow.env \
+    --volume=%E/state/mailcow/hooks/unbound:/hooks:Z \
+    --volume=%E/state/mailcow/conf/unbound/unbound.conf:/etc/unbound/unbound.conf:ro,Z \
+    ${UNBOUND_IMAGE}
+ExecStartPost=%E/bin/wait-ready exec %N 120 dig +short +tries=1 +time=2 @127.0.0.1 unbound
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

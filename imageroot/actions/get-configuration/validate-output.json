@@ -1,26 +1,32 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "Get mailcow settings",
-    "$id": "http://nethserver.org/json-schema/task/input/mailcow/get-configuration",
+    "$id": "http://nethserver.org/json-schema/task/output/mailcow/get-configuration",
     "description": "Get mailcow settings",
     "examples": [
         {
-            "host": "mailcow.domain.org",
+            "host": "mail.example.org",
             "http2https": true,
-            "lets_encrypt": true
+            "lets_encrypt": true,
+            "netfilter_mode": "external",
+            "clamd_enabled": true,
+            "mail_ports": [25, 465, 587, 143, 993, 110, 995, 4190],
+            "mailcow_release": "2026-11"
         }
     ],
     "type": "object",
+    "additionalProperties": false,
     "required": [
         "host",
         "http2https",
-        "lets_encrypt"
+        "lets_encrypt",
+        "netfilter_mode",
+        "clamd_enabled"
     ],
     "properties": {
         "host": {
             "type": "string",
-            "description": "Host name for the application, like 'mailcow.domain.org'",
-            "format": "idn-hostname"
+            "description": "Mail host name, like 'mail.example.org'. Empty before the first configuration"
         },
         "lets_encrypt": {
             "type": "boolean",
@@ -31,6 +37,24 @@
             "type": "boolean",
             "title": "HTTP to HTTPS redirection",
             "description": "Redirect all the HTTP requests to HTTPS"
+        },
+        "netfilter_mode": {
+            "type": "string",
+            "enum": ["disabled", "external", "rootful"],
+            "description": "netfilter-mailcow mode"
+        },
+        "clamd_enabled": {
+            "type": "boolean",
+            "description": "ClamAV runs"
+        },
+        "mail_ports": {
+            "type": "array",
+            "items": {"type": "integer"},
+            "description": "TCP ports published on the node"
+        },
+        "mailcow_release": {
+            "type": "string",
+            "description": "mailcow-dockerized release of the configuration files"
         }
     }
 }
