@@ -1,12 +1,12 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
 [Unit]
-Description=Podman  memcached-mailcow-app.service
+Description=mailcow memcached
 BindsTo=mailcow.service
 After=mailcow.service
+Before=sogo-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -14,17 +14,19 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=300
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/memcached-mailcow-app.pid %t/memcached-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/memcached-mailcow-app.pid  --cidfile %t/memcached-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  memcached-mailcow-app     \
-    --env-file memcached-mailcow.env  ${MEMCACHED_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/memcached-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP memcached-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/memcached-mailcow-app.ctr-id
-PIDFile=%t/memcached-mailcow-app.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=memcached-mailcow \
+    --env=TZ=UTC \
+    ${MEMCACHED_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

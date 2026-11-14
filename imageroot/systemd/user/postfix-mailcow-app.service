@@ -1,11 +1,14 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
+# /dev/log of the node: see hooks/postfix/00-ns8-hostlog.sh, written by
+# bin/sync-mailcow-data.
 
 [Unit]
-Description=Podman  postfix-mailcow-app.service
-After=mailcow.service mysql-mailcow-app.service unbound-mailcow-app.service postfix-tlspol-mailcow-app.service
+Description=mailcow Postfix (SMTP)
+BindsTo=mailcow.service
+After=mailcow.service mysql-mailcow-app.service unbound-mailcow-app.service postfix-tlspol-mailcow-app.service php-fpm-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -13,24 +16,29 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=900
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/postfix-mailcow-app.pid %t/postfix-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/postfix-mailcow-app.pid  --cidfile %t/postfix-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  postfix-mailcow-app   \
-    --volume hooks-postfix:/hooks:Z \
-    --volume conf-postfix:/opt/postfix/conf:z \
-    --volume ssl:/etc/ssl/mail/:ro,z \
-    --volume postfix-vol-1:/var/spool/postfix:Z \
-    --volume crypt-vol-1:/var/lib/zeyple:Z \
-    --volume rspamd-vol-1:/var/lib/rspamd:Z \
-    --volume mysql-socket-vol:/var/run/mysqld/:z  \
-    --env-file postfix-mailcow.env  ${POSTFIX_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/postfix-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP postfix-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/postfix-mailcow-app.ctr-id
-PIDFile=%t/postfix-mailcow-app.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=postfix-mailcow \
+    --env-file=mailcow.env \
+    --volume=%E/state/mailcow/hooks/postfix:/hooks:Z \
+    --volume=%E/state/mailcow/conf/postfix:/opt/postfix/conf:z \
+    --volume=%E/state/ssl:/etc/ssl/mail:ro,z \
+    --volume=postfix-vol-1:/var/spool/postfix:Z \
+    --volume=crypt-vol-1:/var/lib/zeyple:z \
+    --volume=rspamd-vol-1:/var/lib/rspamd:z \
+    --volume=mysql-socket-vol:/var/run/mysqld:z \
+    --volume=/dev/log:/hostlog/dev-log \
+    ${POSTFIX_IMAGE}
+ExecStartPost=%E/bin/wait-ready exec %N 840 bash -c "exec 3<>/dev/tcp/127.0.0.1/25"
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+ExecReload=/usr/bin/podman exec %N postfix -c /opt/postfix/conf reload
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

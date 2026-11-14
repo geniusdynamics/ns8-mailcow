@@ -1,10 +1,9 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
 [Unit]
-Description=Podman  mysql-mailcow-app.service
+Description=mailcow MariaDB
 BindsTo=mailcow.service
 After=mailcow.service
 Before=php-fpm-mailcow-app.service
@@ -17,21 +16,21 @@ Restart=always
 RestartSec=10
 TimeoutStartSec=300
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/mysql-mailcow-app.pid %t/mysql-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/mysql-mailcow-app.pid  --cidfile %t/mysql-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  mysql-mailcow-app   \
-    --volume mysql-vol:/var/lib/mysql/:Z \
-    --volume mysql-socket-vol:/var/run/mysqld/:z \
-    --volume %E/mailcow/data/conf/mysql:/etc/mysql/conf.d/:ro,z \
-    --env-file mysql-mailcow.env  ${MARIADB_IMAGE}
-# Report started only when MariaDB answers on its socket
-ExecStartPost=/usr/bin/podman exec mysql-mailcow-app /bin/bash -c "for i in $$(seq 1 120); do mariadb-admin ping --silent -uroot -p\"$$MYSQL_ROOT_PASSWORD\" >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1"
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/mysql-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP mysql-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/mysql-mailcow-app.ctr-id
-PIDFile=%t/mysql-mailcow-app.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=mysql-mailcow \
+    --env-file=mysql.env \
+    --volume=mysql-vol:/var/lib/mysql:Z \
+    --volume=mysql-socket-vol:/var/run/mysqld:z \
+    --volume=%E/state/mailcow/conf/mysql:/etc/mysql/conf.d:ro,z \
+    ${MARIADB_IMAGE}
+ExecStartPost=/usr/bin/podman exec %N /bin/bash -c "for i in $$(seq 1 120); do mariadb-admin ping --silent -uroot -p\"$$MYSQL_ROOT_PASSWORD\" >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1"
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 45
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

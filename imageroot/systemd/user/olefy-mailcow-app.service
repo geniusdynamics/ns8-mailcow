@@ -1,10 +1,10 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
 [Unit]
-Description=Podman  olefy-mailcow-app.service
+Description=mailcow olefy (Office macro scanner of rspamd)
+BindsTo=mailcow.service
 After=mailcow.service
 
 [Service]
@@ -13,17 +13,27 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=300
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/olefy-mailcow-app.pid %t/olefy-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/olefy-mailcow-app.pid  --cidfile %t/olefy-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  olefy-mailcow-app     \
-    --env-file olefy-mailcow.env  ${OLEFY_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/olefy-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP olefy-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/olefy-mailcow-app.ctr-id
-PIDFile=%t/olefy-mailcow-app.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=olefy-mailcow \
+    --env=OLEFY_BINDADDRESS=127.0.0.1 \
+    --env=OLEFY_BINDPORT=10055 \
+    --env=OLEFY_TMPDIR=/tmp \
+    --env=OLEFY_PYTHON_PATH=/usr/bin/python3 \
+    --env=OLEFY_OLEVBA_PATH=/usr/bin/olevba \
+    --env=OLEFY_LOGLVL=20 \
+    --env=OLEFY_MINLENGTH=500 \
+    --env=OLEFY_DEL_TMP=1 \
+    --env-file=mailcow.env \
+    ${OLEFY_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

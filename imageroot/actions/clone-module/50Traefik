@@ -5,12 +5,17 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+# Configure and start the clone. Let's Encrypt stays off: the DNS records
+# may not point to this node yet.
+
 import agent
 import os
 
 configure_retval = agent.tasks.run(agent_id=os.environ['AGENT_ID'], action='configure-module', data={
     "lets_encrypt": False,
-    "host": os.environ["TRAEFIK_HOST"],
+    "host": os.environ.get("MAILCOW_HOSTNAME") or os.environ["TRAEFIK_HOST"],
     "http2https": os.environ.get("TRAEFIK_HTTP2HTTPS", "True").lower() == "true",
+    "netfilter_mode": os.environ.get("NETFILTER_MODE", "external"),
+    "clamd_enabled": os.environ.get("CLAMD_ENABLED", "True").lower() == "true",
 })
 agent.assert_exp(configure_retval['exit_code'] == 0, "The configure-module subtask failed!")

@@ -8,22 +8,38 @@
 import os
 import sys
 import json
+import subprocess
 import agent
-import urllib.request
-import urllib.error
-import ssl
+import mailcow_ns8
 
 agent.set_weight(os.path.basename(__file__), 0) # Validation step, no task progress at all
 
-# retrieve json data
+def port_in_use(port):
+    try:
+        return agent.tcp_port_in_use(port)
+    except OSError:
+        return False # e.g. no IPv6 on the node
+
 data = json.load(sys.stdin)
-
-# Setup default values
 host = data.get("host")
-# do not test if it is the same host
-oldHost = os.environ.get('TRAEFIK_HOST','')
+errors = []
 
-if host != oldHost and agent.http_route_in_use(domain=host):
+# do not test if it is the same host
+old_host = os.environ.get('TRAEFIK_HOST', '')
+if host != old_host and agent.http_route_in_use(domain=host):
+    errors.append({'field': 'host', 'parameter': 'host', 'value': host, 'error': 'domain_already_used_in_traefik'})
+
+# mailcow replaces the NS8 mail module: both need the mail ports of the node
+mail_modules = mailcow_ns8.mail_modules_on_node()
+if mail_modules:
+    errors.append({'field': 'host', 'parameter': 'host', 'value': ",".join(mail_modules), 'error': 'mail_module_on_node'})
+elif subprocess.run(['systemctl', '--user', '-q', 'is-active', 'mailcow.service']).returncode != 0:
+    # The pod is not running yet: another service must not hold a mail port
+    busy = [port for port in mailcow_ns8.MAIL_PORTS if port_in_use(int(port.split('/')[0]))]
+    if busy:
+        errors.append({'field': 'host', 'parameter': 'host', 'value': ",".join(busy), 'error': 'mail_port_in_use'})
+
+if errors:
     agent.set_status('validation-failed')
-    json.dump([{'field':'host','parameter':'host','value':host,'error':'domain_already_used_in_traefik'}],fp=sys.stdout)
-    sys.exit(2)
+    json.dump(errors, fp=sys.stdout)
+    sys.exit(3)

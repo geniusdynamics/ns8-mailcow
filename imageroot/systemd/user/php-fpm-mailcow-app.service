@@ -1,12 +1,14 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
+# The entrypoint upgrades and initializes the database (init_db): the unit is
+# started when PHP-FPM listens, that is once the database is ready.
 
 [Unit]
-Description=Podman  php-fpm-mailcow-app.service
+Description=mailcow PHP-FPM (UI, API, authentication of the mail services)
 BindsTo=mailcow.service
-After=mailcow.service mysql-mailcow-app.service redis-mailcow-app.service
+After=mailcow.service mysql-mailcow-app.service redis-mailcow-app.service unbound-mailcow-app.service dockerapi.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -14,43 +16,46 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=900
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/php-fpm-mailcow-app.pid %t/php-fpm-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/php-fpm-mailcow-app.pid --cidfile %t/php-fpm-mailcow-app.ctr-id --cgroups=no-conmon --pod-id-file %t/mailcow.pod-id --replace -d --name php-fpm-mailcow-app \
-    --volume %E/mailcow/data/hooks/phpfpm:/hooks:Z \
-    --volume %E/bin/php-fpm-entrypoint:/docker-entrypoint.sh:Z \
-    --volume %E/mailcow/data/web:/web:z \
-    --volume %E/mailcow/data/conf/rspamd/dynmaps:/dynmaps:ro,z \
-    --volume %E/mailcow/data/conf/rspamd/custom:/rspamd_custom_maps:z \
-    --volume %E/mailcow/data/conf/dovecot/auth/mailcowauth.php:/mailcowauth/mailcowauth.php:z \
-    --volume %E/mailcow/data/web/inc/functions.inc.php:/mailcowauth/functions.inc.php:z \
-    --volume %E/mailcow/data/web/inc/functions.auth.inc.php:/mailcowauth/functions.auth.inc.php:z \
-    --volume %E/mailcow/data/web/inc/sessions.inc.php:/mailcowauth/sessions.inc.php:z \
-    --volume %E/mailcow/data/web/inc/functions.mailbox.inc.php:/mailcowauth/functions.mailbox.inc.php:z \
-    --volume %E/mailcow/data/web/inc/functions.ratelimit.inc.php:/mailcowauth/functions.ratelimit.inc.php:z \
-    --volume %E/mailcow/data/web/inc/functions.acl.inc.php:/mailcowauth/functions.acl.inc.php:z \
-    --volume rspamd-vol-1:/var/lib/rspamd:Z \
-    --volume mysql-socket-vol:/var/run/mysqld/:z \
-    --volume %E/mailcow/data/conf/sogo:/etc/sogo:z \
-    --volume %E/mailcow/data/conf/rspamd/meta_exporter:/meta_exporter:ro,z \
-    --volume %E/mailcow/data/conf/phpfpm/crons:/crons:z \
-    --volume %E/mailcow/data/conf/phpfpm/sogo-sso:/etc/sogo-sso:z \
-    --volume %E/mailcow/data/conf/phpfpm/php-fpm.d/pools.conf:/usr/local/etc/php-fpm.d/z-pools.conf:Z \
-    --volume %E/mailcow/data/conf/phpfpm/php-conf.d/opcache-recommended.ini:/usr/local/etc/php/conf.d/opcache-recommended.ini:Z \
-    --volume %E/mailcow/data/conf/phpfpm/php-conf.d/upload.ini:/usr/local/etc/php/conf.d/upload.ini:Z \
-    --volume %E/mailcow/data/conf/phpfpm/php-conf.d/other.ini:/usr/local/etc/php/conf.d/zzz-other.ini:Z \
-    --volume %E/mailcow/data/conf/dovecot/global_sieve_before:/global_sieve/before:z \
-    --volume %E/mailcow/data/conf/dovecot/global_sieve_after:/global_sieve/after:z \
-    --volume %E/mailcow/data/assets/templates:/tpls:z \
-    --volume %E/mailcow/data/conf/nginx:/etc/nginx/conf.d:z \
-    --env-file php-fpm-mailcow.env ${PHPFPM_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/php-fpm-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP php-fpm-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/php-fpm-mailcow-app.ctr-id
-PIDFile=%t/php-fpm-mailcow-app.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=php-fpm-mailcow \
+    --env-file=mailcow.env \
+    --volume=%E/state/mailcow/hooks/phpfpm:/hooks:Z \
+    --volume=%E/state/mailcow/web:/web:z \
+    --volume=%E/state/mailcow/conf/rspamd/dynmaps:/dynmaps:ro,z \
+    --volume=%E/state/mailcow/conf/rspamd/custom:/rspamd_custom_maps:z \
+    --volume=%E/state/mailcow/conf/dovecot/auth/mailcowauth.php:/mailcowauth/mailcowauth.php:z \
+    --volume=%E/state/mailcow/web/inc/functions.inc.php:/mailcowauth/functions.inc.php:z \
+    --volume=%E/state/mailcow/web/inc/functions.auth.inc.php:/mailcowauth/functions.auth.inc.php:z \
+    --volume=%E/state/mailcow/web/inc/sessions.inc.php:/mailcowauth/sessions.inc.php:z \
+    --volume=%E/state/mailcow/web/inc/functions.mailbox.inc.php:/mailcowauth/functions.mailbox.inc.php:z \
+    --volume=%E/state/mailcow/web/inc/functions.ratelimit.inc.php:/mailcowauth/functions.ratelimit.inc.php:z \
+    --volume=%E/state/mailcow/web/inc/functions.acl.inc.php:/mailcowauth/functions.acl.inc.php:z \
+    --volume=rspamd-vol-1:/var/lib/rspamd:z \
+    --volume=mysql-socket-vol:/var/run/mysqld:z \
+    --volume=%E/state/mailcow/conf/sogo:/etc/sogo:z \
+    --volume=%E/state/mailcow/conf/rspamd/meta_exporter:/meta_exporter:ro,z \
+    --volume=%E/state/mailcow/conf/phpfpm/crons:/crons:z \
+    --volume=%E/state/mailcow/conf/phpfpm/sogo-sso:/etc/sogo-sso:z \
+    --volume=%E/state/mailcow/conf/phpfpm/php-fpm.d/pools.conf:/usr/local/etc/php-fpm.d/z-pools.conf:z \
+    --volume=%E/state/mailcow/conf/phpfpm/php-conf.d/opcache-recommended.ini:/usr/local/etc/php/conf.d/opcache-recommended.ini:z \
+    --volume=%E/state/mailcow/conf/phpfpm/php-conf.d/upload.ini:/usr/local/etc/php/conf.d/upload.ini:z \
+    --volume=%E/state/mailcow/conf/phpfpm/php-conf.d/other.ini:/usr/local/etc/php/conf.d/zzz-other.ini:z \
+    --volume=%E/state/mailcow/conf/dovecot/global_sieve_before:/global_sieve/before:z \
+    --volume=%E/state/mailcow/conf/dovecot/global_sieve_after:/global_sieve/after:z \
+    --volume=%E/state/mailcow/assets/templates:/tpls:z \
+    --volume=%E/state/mailcow/conf/nginx:/etc/nginx/conf.d:z \
+    ${PHPFPM_IMAGE} php-fpm -d expose_php=0
+ExecStartPost=%E/bin/wait-ready exec %N 840 php -r "exit(@fsockopen('127.0.0.1', 9002) ? 0 : 1);"
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+ExecReload=/usr/bin/podman kill --signal=USR2 %N
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

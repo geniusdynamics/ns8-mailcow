@@ -1,12 +1,11 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
 [Unit]
-Description=Podman  nginx-mailcow-app.service
+Description=mailcow nginx (UI, SOGo, autodiscover), behind Traefik
 BindsTo=mailcow.service
-After=mailcow.service redis-mailcow-app.service php-fpm-mailcow-app.service
+After=mailcow.service php-fpm-mailcow-app.service sogo-mailcow-app.service rspamd-mailcow-app.service redis-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -14,28 +13,31 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=300
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/nginx-mailcow-app.pid %t/nginx-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/nginx-mailcow-app.pid --cidfile %t/nginx-mailcow-app.ctr-id --cgroups=no-conmon --pod-id-file %t/mailcow.pod-id --replace -d --name nginx-mailcow-app \
-    --volume %E/mailcow/data/web:/web:ro,z \
-    --volume %E/mailcow/data/conf/rspamd/dynmaps:/dynmaps:ro,z \
-    --volume %E/state/ssl:/etc/ssl/mail:ro,z \
-    --volume %E/bin/nginx/:/etc/nginx/conf.d/templates/:z \
-    --volume nginx-conf:/etc/nginx/conf.d/:Z \
-    --volume %E/mailcow/data/conf/rspamd/meta_exporter:/meta_exporter:ro,z \
-    --volume %E/mailcow/data/conf/dovecot/auth/mailcowauth.php:/mailcowauth/mailcowauth.php:z \
-    --volume %E/mailcow/data/web/inc/functions.inc.php:/mailcowauth/functions.inc.php:z \
-    --volume %E/mailcow/data/web/inc/functions.auth.inc.php:/mailcowauth/functions.auth.inc.php:z \
-    --volume %E/mailcow/data/web/inc/sessions.inc.php:/mailcowauth/sessions.inc.php:z \
-    --volume sogo-web-vol-1:/usr/lib/GNUstep/SOGo:Z \
-    --env-file nginx-mailcow.env ${NGINX_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/nginx-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP nginx-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/nginx-mailcow-app.ctr-id
-PIDFile=%t/nginx-mailcow-app.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=nginx-mailcow \
+    --env-file=mailcow.env \
+    --volume=%E/state/mailcow/web:/web:ro,z \
+    --volume=%E/state/mailcow/conf/rspamd/dynmaps:/dynmaps:ro,z \
+    --volume=%E/state/ssl:/etc/ssl/mail:ro,z \
+    --volume=%E/state/mailcow/conf/nginx:/etc/nginx/conf.d:z \
+    --volume=%E/state/mailcow/conf/rspamd/meta_exporter:/meta_exporter:ro,z \
+    --volume=%E/state/mailcow/conf/dovecot/auth/mailcowauth.php:/mailcowauth/mailcowauth.php:z \
+    --volume=%E/state/mailcow/web/inc/functions.inc.php:/mailcowauth/functions.inc.php:z \
+    --volume=%E/state/mailcow/web/inc/functions.auth.inc.php:/mailcowauth/functions.auth.inc.php:z \
+    --volume=%E/state/mailcow/web/inc/sessions.inc.php:/mailcowauth/sessions.inc.php:z \
+    --volume=sogo-web-vol-1:/usr/local/lib/GNUstep/SOGo:z \
+    ${NGINX_IMAGE}
+ExecStartPost=%E/bin/wait-ready http http://127.0.0.1:${TCP_PORT}/ 300
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+ExecReload=/usr/bin/podman exec %N nginx -s reload
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target
