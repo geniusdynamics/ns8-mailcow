@@ -32,7 +32,7 @@ podman run \
   --interactive \
   --network=none \
   --volume=./initdb.d:/docker-entrypoint-initdb.d:z \
-  --volume mysql-data:/var/lib/mysql/:Z \
+  --volume mysql-vol:/var/lib/mysql/:Z \
   \
     --env-file mysql-mailcow.env \
   --replace --name=restore_db \
