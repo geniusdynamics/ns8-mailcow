@@ -12,9 +12,11 @@ exec 1>&2
 # If the control reaches this step, the service can be enabled and started
 
 
-# Enable Podman Sockets
+# dockerapi talks to the Podman API socket of the module user
 systemctl --user enable podman.socket
 systemctl --user start podman.socket
 
 systemctl --user enable mailcow.service
-systemctl --user restart mailcow.service
+systemctl --user restart mailcow.service mysql-mailcow-app.service \
+    redis-mailcow-app.service memcached-mailcow-app.service dockerapi.service \
+    php-fpm-mailcow-app.service nginx-mailcow-app.service

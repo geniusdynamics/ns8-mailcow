@@ -5,6 +5,7 @@
 
 [Unit]
 Description=Podman  memcached-mailcow-app.service
+BindsTo=mailcow.service
 After=mailcow.service
 
 [Service]

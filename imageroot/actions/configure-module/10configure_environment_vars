@@ -7,10 +7,22 @@
 
 import json
 import os
+import subprocess
 import sys
 import agent
 
 data = json.load(sys.stdin)
+
+
+def write_envfile(name, values):
+    """Write a KEY=VALUE file readable only by the module user (0600)"""
+    tmp = f"{name}.{os.getpid()}.tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        for key, value in values.items():
+            f.write(f"{key}={value}\n")
+    os.replace(tmp, name)
+
 
 
 def generate_random_password(length):
@@ -50,7 +62,9 @@ MASTER = data.get("MASTER", "y")
 MAILCOW_HOSTNAME = data.get("host", "")
 SKIP_SOGO = data.get("SKIP_SOGO", "y")
 REDIS_SLAVEOF_PORT = "6379"
-REDIS_SLAVEOF_IP = "redis-mailcow-app"
+# All the containers of the pod share 127.0.0.1. Container names resolve only
+# while the container runs, so the services are reached on 127.0.0.1.
+REDIS_SLAVEOF_IP = "127.0.0.1"
 ACL_ANYONE = data.get("ACL_ANYONE", "disallow")
 ALLOW_ADMIN_EMAIL_LOGIN = data.get("ALLOW_ADMIN_EMAIL_LOGIN", "n")
 IPV4_NETWORK = data.get("IPV4_NETWORK", "172.22.1")
@@ -72,13 +86,13 @@ unbound_mailcow = {
     "SKIP_UNBOUND_HEALTHCHECK": SKIP_UNBOUND_HEALTHCHECK,
     "TZ": TZ,
 }
-agent.write_envfile("unbound-mailcow.env", unbound_mailcow)
+write_envfile("unbound-mailcow.env", unbound_mailcow)
 
 clamd_mailcow = {
     "SKIP_CLAMD": SKIP_CLAMD,
     "TZ": TZ,
 }
-agent.write_envfile("clamd-mailcow.env", clamd_mailcow)
+write_envfile("clamd-mailcow.env", clamd_mailcow)
 
 if os.path.exists("sogo-mailcow.env"):
     sogot = agent.read_envfile("sogo-mailcow.env")
@@ -105,7 +119,7 @@ sogo_mailcow = {
     "IPV4_NETWORK": IPV4_NETWORK,
     "REDIS_SLAVEOF_IP": REDIS_SLAVEOF_IP,
 }
-agent.write_envfile("sogo-mailcow.env", sogo_mailcow)
+write_envfile("sogo-mailcow.env", sogo_mailcow)
 
 MAILDIR_GC_TIME = data.get("MAILDIR_GC_TIME", "7200")
 MAILDIR_SUB = data.get("MAILDIR_SUB", "")
@@ -140,7 +154,7 @@ dovecot_mailcow = {
     "MAILCOW_HOSTNAME": MAILCOW_HOSTNAME,
     "IPV4_NETWORK": IPV4_NETWORK,
 }
-agent.write_envfile("dovecot-mailcow.env", dovecot_mailcow)
+write_envfile("dovecot-mailcow.env", dovecot_mailcow)
 
 postfix_tlspol_mailcow = {
     "DEV_MODE": DEV_MODE,
@@ -150,17 +164,18 @@ postfix_tlspol_mailcow = {
     "REDIS_SLAVEOF_PORT": REDIS_SLAVEOF_PORT,
     "REDISPASS": REDISPASS,
 }
-agent.write_envfile("postfix-tlspol-mailcow.env", postfix_tlspol_mailcow)
+write_envfile("postfix-tlspol-mailcow.env", postfix_tlspol_mailcow)
 
 NGINX_USE_PROXY_PROTOCOL = data.get("NGINX_USE_PROXY_PROTOCOL", "n")
-REDISHOST = "redis-mailcow-app"
-SOGOHOST = "sogo-mailcow-app"
-PHPFPMHOST = "php-fpm-mailcow-app"
-RSPAMDHOST = "rspamd-mailcow-app"
+REDISHOST = "127.0.0.1"
+SOGOHOST = "127.0.0.1"
+PHPFPMHOST = "127.0.0.1"
+RSPAMDHOST = "127.0.0.1"
 TRUSTED_PROXIES = data.get("TRUSTED_PROXIES", "")
 HTTP_REDIRECT = data.get("HTTP_REDIRECT", "n")
 HTTP_PORT = data.get("HTTP_PORT", "80")
-ENABLE_IPV6 = data.get("ENABLE_IPV6", "true")
+# The rootless pod network has no IPv6
+ENABLE_IPV6 = data.get("ENABLE_IPV6", "false")
 SKIP_RSPAMD = data.get("SKIP_RSPAMD", "y")
 nginx_mailcow = {
     "NGINX_USE_PROXY_PROTOCOL": NGINX_USE_PROXY_PROTOCOL,
@@ -171,7 +186,8 @@ nginx_mailcow = {
     "TRUSTED_PROXIES": TRUSTED_PROXIES,
     "HTTP_REDIRECT": HTTP_REDIRECT,
     "HTTP_PORT": HTTP_PORT,
-    "HTTPS_PORT": HTTPS_PORT,
+    # dockerapi owns port 443 of the pod; Traefik talks to HTTP_PORT
+    "HTTPS_PORT": "8443",
     "ENABLE_IPV6": ENABLE_IPV6,
     "ADDITIONAL_SERVER_NAMES": ADDITIONAL_SERVER_NAMES,
     "SKIP_RSPAMD": SKIP_RSPAMD,
@@ -180,7 +196,7 @@ nginx_mailcow = {
     "SKIP_SOGO": SKIP_SOGO,
     "MAILCOW_HOSTNAME": MAILCOW_HOSTNAME,
 }
-agent.write_envfile("nginx-mailcow.env", nginx_mailcow)
+write_envfile("nginx-mailcow.env", nginx_mailcow)
 
 dockerapi_mailcow = {
     "DBROOT": DBROOT,
@@ -189,7 +205,7 @@ dockerapi_mailcow = {
     "REDISPASS": REDISPASS,
     "TZ": TZ,
 }
-agent.write_envfile("dockerapi-mailcow.env", dockerapi_mailcow)
+write_envfile("dockerapi-mailcow.env", dockerapi_mailcow)
 
 OLEFY_BINDADDRESS = data.get("OLEFY_BINDADDRESS", "0.0.0.0")
 OLEFY_TMPDIR = data.get("OLEFY_TMPDIR", "/tmp")
@@ -211,7 +227,7 @@ olefy_mailcow = {
     "SKIP_OLEFY": SKIP_OLEFY,
     "TZ": TZ,
 }
-agent.write_envfile("olefy-mailcow.env", olefy_mailcow)
+write_envfile("olefy-mailcow.env", olefy_mailcow)
 
 postfix_mailcow = {
     "SPAMHAUS_DQS_KEY": SPAMHAUS_DQS_KEY,
@@ -225,12 +241,12 @@ postfix_mailcow = {
     "MAILCOW_HOSTNAME": MAILCOW_HOSTNAME,
     "TZ": TZ,
 }
-agent.write_envfile("postfix-mailcow.env", postfix_mailcow)
+write_envfile("postfix-mailcow.env", postfix_mailcow)
 
 memcached_mailcow = {
     "TZ": TZ,
 }
-agent.write_envfile("memcached-mailcow.env", memcached_mailcow)
+write_envfile("memcached-mailcow.env", memcached_mailcow)
 
 ADDITIONAL_SAN = data.get("ADDITIONAL_SAN", "")
 DIRECTORY_URL = data.get("DIRECTORY_URL", "")
@@ -263,7 +279,7 @@ acme_mailcow = {
     "REDIS_SLAVEOF_IP": REDIS_SLAVEOF_IP,
     "REDIS_SLAVEOF_PORT": REDIS_SLAVEOF_PORT,
 }
-agent.write_envfile("acme-mailcow.env", acme_mailcow)
+write_envfile("acme-mailcow.env", acme_mailcow)
 
 DISABLE_NETFILTER_ISOLATION_RULE = data.get("DISABLE_NETFILTER_ISOLATION_RULE", "n")
 netfilter_mailcow = {
@@ -278,7 +294,7 @@ netfilter_mailcow = {
     "IPV4_NETWORK": IPV4_NETWORK,
     "IPV6_NETWORK": IPV6_NETWORK,
 }
-agent.write_envfile("netfilter-mailcow.env", netfilter_mailcow)
+write_envfile("netfilter-mailcow.env", netfilter_mailcow)
 
 USE_WATCHDOG = data.get("USE_WATCHDOG", "n")
 WATCHDOG_SUBJECT = data.get("WATCHDOG_SUBJECT", "Watchdog ALERT")
@@ -365,14 +381,14 @@ watchdog_mailcow = {
     "DBROOT": DBROOT,
     "TZ": TZ,
 }
-agent.write_envfile("watchdog-mailcow.env", watchdog_mailcow)
+write_envfile("watchdog-mailcow.env", watchdog_mailcow)
 
 redis_mailcow = {
     "REDISMASTERPASS": REDISMASTERPASS,
     "REDISPASS": REDISPASS,
     "TZ": TZ,
 }
-agent.write_envfile("redis-mailcow.env", redis_mailcow)
+write_envfile("redis-mailcow.env", redis_mailcow)
 
 rspamd_mailcow = {
     "SPAMHAUS_DQS_KEY": SPAMHAUS_DQS_KEY,
@@ -383,13 +399,13 @@ rspamd_mailcow = {
     "REDISPASS": REDISPASS,
     "TZ": TZ,
 }
-agent.write_envfile("rspamd-mailcow.env", rspamd_mailcow)
+write_envfile("rspamd-mailcow.env", rspamd_mailcow)
 
 ofelia_mailcow = {
     "COMPOSE_PROJECT_NAME": COMPOSE_PROJECT_NAME,
     "TZ": TZ,
 }
-agent.write_envfile("ofelia-mailcow.env", ofelia_mailcow)
+write_envfile("ofelia-mailcow.env", ofelia_mailcow)
 
 if os.path.exists("php-fpm-mailcow.env"):
     phpt = agent.read_envfile("php-fpm-mailcow.env")
@@ -447,4 +463,23 @@ php_fpm_mailcow = {
     "DBUSER": DBUSER,
     "IPV6_NETWORK": IPV6_NETWORK,
 }
-agent.write_envfile("php-fpm-mailcow.env", php_fpm_mailcow)
+write_envfile("php-fpm-mailcow.env", php_fpm_mailcow)
+
+
+# Certificate of the nginx HTTPS server. Traefik terminates TLS for the
+# clients, so a self-signed certificate is enough. Without it nginx stops
+# with: cannot load certificate "/etc/ssl/mail/cert.pem"
+os.makedirs("ssl", exist_ok=True)
+if not os.path.exists("ssl/cert.pem") or not os.path.exists("ssl/key.pem"):
+    old_umask = os.umask(0o077)
+    try:
+        subprocess.run([
+            "openssl", "req", "-x509", "-newkey", "rsa:2048", "-sha256", "-nodes",
+            "-days", "3650", "-subj", "/CN=" + (MAILCOW_HOSTNAME or "mailcow"),
+            "-keyout", "ssl/key.pem", "-out", "ssl/cert.pem",
+        ], check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as ex:
+        print(agent.SD_ERR + "openssl failed: " + ex.stderr, file=sys.stderr)
+        raise
+    finally:
+        os.umask(old_umask)

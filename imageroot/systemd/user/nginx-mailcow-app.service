@@ -6,7 +6,7 @@
 [Unit]
 Description=Podman  nginx-mailcow-app.service
 BindsTo=mailcow.service
-After=mailcow.service redis-mailcow-app.service php-fpm-mailcow-app.service sogo-mailcow-app.service rspamd-mailcow-app.service
+After=mailcow.service redis-mailcow-app.service php-fpm-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -18,16 +18,16 @@ TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/nginx-mailcow-app.pid %t/nginx-mailcow-app.ctr-id
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/nginx-mailcow-app.pid --cidfile %t/nginx-mailcow-app.ctr-id --cgroups=no-conmon --pod-id-file %t/mailcow.pod-id --replace -d --name nginx-mailcow-app \
-    --volume %S/mailcow/data/web:/web:ro,z \
-    --volume %S/mailcow/data/conf/rspamd/dynmaps:/dynmaps:ro,z \
-    --volume ssl:/etc/ssl/mail:ro,z \
-    --volume %S/bin/nginx/:/etc/nginx/conf.d/templates/:z \
+    --volume %E/mailcow/data/web:/web:ro,z \
+    --volume %E/mailcow/data/conf/rspamd/dynmaps:/dynmaps:ro,z \
+    --volume %E/state/ssl:/etc/ssl/mail:ro,z \
+    --volume %E/bin/nginx/:/etc/nginx/conf.d/templates/:z \
     --volume nginx-conf:/etc/nginx/conf.d/:Z \
-    --volume %S/mailcow/data/conf/rspamd/meta_exporter:/meta_exporter:ro,z \
-    --volume %S/mailcow/data/conf/dovecot/auth/mailcowauth.php:/mailcowauth/mailcowauth.php:z \
-    --volume %S/mailcow/data/web/inc/functions.inc.php:/mailcowauth/functions.inc.php:z \
-    --volume %S/mailcow/data/web/inc/functions.auth.inc.php:/mailcowauth/functions.auth.inc.php:z \
-    --volume %S/mailcow/data/web/inc/sessions.inc.php:/mailcowauth/sessions.inc.php:z \
+    --volume %E/mailcow/data/conf/rspamd/meta_exporter:/meta_exporter:ro,z \
+    --volume %E/mailcow/data/conf/dovecot/auth/mailcowauth.php:/mailcowauth/mailcowauth.php:z \
+    --volume %E/mailcow/data/web/inc/functions.inc.php:/mailcowauth/functions.inc.php:z \
+    --volume %E/mailcow/data/web/inc/functions.auth.inc.php:/mailcowauth/functions.auth.inc.php:z \
+    --volume %E/mailcow/data/web/inc/sessions.inc.php:/mailcowauth/sessions.inc.php:z \
     --volume sogo-web-vol-1:/usr/lib/GNUstep/SOGo:Z \
     --env-file nginx-mailcow.env ${NGINX_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/nginx-mailcow-app.ctr-id -t 10

@@ -6,7 +6,8 @@
 [Unit]
 Description=Podman  mysql-mailcow-app.service
 BindsTo=mailcow.service
-After=mailcow.service unbound-mailcow-app.service netfilter-mailcow-app.service
+After=mailcow.service
+Before=php-fpm-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -14,14 +15,17 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=300
 TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/mysql-mailcow-app.pid %t/mysql-mailcow-app.ctr-id
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/mysql-mailcow-app.pid  --cidfile %t/mysql-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  mysql-mailcow-app   \
     --volume mysql-vol:/var/lib/mysql/:Z \
     --volume mysql-socket-vol:/var/run/mysqld/:z \
-    --volume conf-mysql:/etc/mysql/conf.d/:ro,Z   \
+    --volume %E/mailcow/data/conf/mysql:/etc/mysql/conf.d/:ro,z \
     --env-file mysql-mailcow.env  ${MARIADB_IMAGE}
+# Report started only when MariaDB answers on its socket
+ExecStartPost=/usr/bin/podman exec mysql-mailcow-app /bin/bash -c "for i in $$(seq 1 120); do mariadb-admin ping --silent -uroot -p\"$$MYSQL_ROOT_PASSWORD\" >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1"
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/mysql-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP mysql-mailcow-app
 SyslogIdentifier=%u

@@ -57,150 +57,37 @@ EOF
 
 ## Network and access
 
-- Reserves 1 TCP port(s) on the node. The web application is published through Traefik on the configured host name.
+- Reserves 1 TCP port on the node, published on port 80 (nginx) of the pod. Traefik terminates TLS and publishes the mailcow UI on the configured host name.
+- Secrets (database, Redis, API keys) are in `state/*.env` files with mode 0600.
 - Runs rootless.
 - Declares these NS8 authorizations: `traefik@node:routeadm`.
 
 ## Backup
 
-The following paths are included in the NS8 backup (`imageroot/etc/state-include.conf`):
-
-- `state/unbound-mailcow.env`
-- `volumes/hooks-unbound`
-- `volumes/conf-unbound-unboundconf`
-- `state/clamd-mailcow.env`
-- `volumes/conf-clamav-`
-- `volumes/clamd-db-vol-1`
-- `state/sogo-mailcow.env`
-- `volumes/hooks-sogo`
-- `volumes/conf-sogo-`
-- `volumes/web-inc-initdbincphp`
-- `volumes/conf-sogo-custom-faviconico`
-- `volumes/conf-sogo-custom-shortlogosvg`
-- `volumes/conf-sogo-custom-fulllogosvg`
-- `volumes/conf-sogo-custom-fulllogopng`
-- `volumes/conf-sogo-custom-themejs`
-- `volumes/conf-sogo-custom-sogojs`
-- `volumes/mysql-socket-vol-1`
-- `volumes/sogo-web-vol-1`
-- `volumes/sogo-userdata-backup-vol-1`
-- `state/dovecot-mailcow.env`
-- `volumes/hooks-dovecot`
-- `volumes/conf-dovecot`
-- `volumes/assets-ssl`
-- `volumes/conf-sogo-`
-- `volumes/phpfpm-sogo-sso-`
-- `volumes/vmail-vol-1`
-- `volumes/vmail-index-vol-1`
-- `volumes/crypt-vol-1`
-- `volumes/rspamd-custom-`
-- `volumes/assets-templates`
-- `volumes/rspamd-vol-1`
-- `volumes/mysql-socket-vol-1`
-- `state/postfix-tlspol-mailcow.env`
-- `volumes/postfix-tlspol-vol-1`
-- `state/nginx-mailcow.env`
-- `volumes/data-web`
-- `volumes/conf-rspamd-dynmaps`
-- `volumes/assets-ssl-`
-- `volumes/conf-nginx-`
-- `volumes/conf-rspamd-metaexporter`
-- `volumes/dovecot-auth-mailcowauthphp`
-- `volumes/web-inc-functionsincphp`
-- `volumes/web-inc-functionsauthincphp`
-- `volumes/web-inc-sessionsincphp`
-- `volumes/sogo-web-vol-1`
-- `state/dockerapi-mailcow.env`
-- `volumes/run-dockersock`
-- `state/olefy-mailcow.env`
-- `state/mysql-mailcow.env`
-- `volumes/mysql-vol-1`
-- `volumes/mysql-socket-vol-1`
-- `volumes/conf-mysql-`
-- `state/postfix-mailcow.env`
-- `volumes/hooks-postfix`
-- `volumes/conf-postfix`
-- `volumes/assets-ssl`
-- `volumes/postfix-vol-1`
-- `volumes/crypt-vol-1`
-- `volumes/rspamd-vol-1`
-- `volumes/mysql-socket-vol-1`
-- `state/memcached-mailcow.env`
-- `state/acme-mailcow.env`
-- `volumes/web-well-known-acme-challenge`
-- `volumes/assets-ssl`
-- `volumes/assets-ssl-example`
-- `volumes/mysql-socket-vol-1`
-- `state/netfilter-mailcow.env`
-- `volumes/lib-modules`
-- `state/watchdog-mailcow.env`
-- `volumes/rspamd-vol-1`
-- `volumes/mysql-socket-vol-1`
-- `volumes/postfix-vol-1`
-- `volumes/assets-ssl`
-- `state/redis-mailcow.env`
-- `volumes/redis-vol-1`
-- `volumes/conf-redis-redis-confsh`
-- `state/rspamd-mailcow.env`
-- `volumes/hooks-rspamd`
-- `volumes/rspamd-custom-`
-- `volumes/rspamd-overrided-`
-- `volumes/rspamd-locald-`
-- `volumes/rspamd-pluginsd-`
-- `volumes/rspamd-lua-`
-- `volumes/conf-rspamd-rspamdconflocal`
-- `volumes/conf-rspamd-rspamdconfoverride`
-- `volumes/rspamd-vol-1`
-- `state/ofelia-mailcow.env`
-- `volumes/run-dockersock`
-- `state/php-fpm-mailcow.env`
-- `volumes/hooks-phpfpm`
-- `volumes/data-web`
-- `volumes/conf-rspamd-dynmaps`
-- `volumes/rspamd-custom-`
-- `volumes/dovecot-auth-mailcowauthphp`
-- `volumes/web-inc-functionsincphp`
-- `volumes/web-inc-functionsauthincphp`
-- `volumes/web-inc-sessionsincphp`
-- `volumes/web-inc-functionsmailboxincphp`
-- `volumes/web-inc-functionsratelimitincphp`
-- `volumes/web-inc-functionsaclincphp`
-- `volumes/rspamd-vol-1`
-- `volumes/mysql-socket-vol-1`
-- `volumes/conf-sogo-`
-- `volumes/conf-rspamd-metaexporter`
-- `volumes/conf-phpfpm-crons`
-- `volumes/phpfpm-sogo-sso-`
-- `volumes/phpfpm-php-fpmd-poolsconf`
-- `volumes/phpfpm-php-confd-opcache-recommendedini`
-- `volumes/phpfpm-php-confd-uploadini`
-- `volumes/phpfpm-php-confd-otherini`
-- `volumes/conf-dovecot-globalsievebefore`
-- `volumes/conf-dovecot-globalsieveafter`
-- `volumes/assets-templates`
-- `volumes/conf-nginx-`
+The NS8 backup (`imageroot/etc/state-include.conf`) holds `state/mysql-mailcow.sql`, the dump of the mailcow database written by `bin/module-dump-state`.
 
 ## Services
 
-- `acme-mailcow-app.service`
-- `clamd-mailcow-app.service`
-- `dockerapi.service`
-- `dovecot-mailcow-app.service`
-- `mailcow.service`
-- `memcached-mailcow-app.service`
+Running: the web UI stack.
+
+- `mailcow.service`: the pod
 - `mysql-mailcow-app.service`
-- `netfilter-mailcow-app.service`
-- `nginx-mailcow-app.service`
-- `ofelia-mailcow-app.service`
-- `olefy-mailcow-app.service`
-- `php-fpm-mailcow-app.service`
-- `postfix-mailcow-app.service`
-- `postfix-tlspol-mailcow-app.service`
 - `redis-mailcow-app.service`
-- `rspamd-mailcow-app.service`
-- `sogo-mailcow-app.service`
-- `unbound-mailcow-app.service`
-- `watchdog-mailcow-app.service`
+- `memcached-mailcow-app.service`
+- `dockerapi.service`: the UI refuses to load without it ("Connection to dockerapi container failed"). It reads the Podman API socket of the module user.
+- `php-fpm-mailcow-app.service`
+- `nginx-mailcow-app.service`
+
+Present but not started: `acme`, `clamd`, `dovecot`, `netfilter`, `ofelia`, `olefy`, `postfix`, `postfix-tlspol`, `rspamd`, `sogo`, `unbound`, `watchdog`. See "Mail services" below.
+
+## Mail services
+
+The module runs the mailcow **web UI only**: admins can log in and manage the mailcow database, but no mail is sent or received. To run the mail services in rootless Podman, the module still needs:
+
+- public ports 25, 465, 587, 143, 993, 110, 995 and 4190, opened with `org.nethserver.tcp-ports-demand` port mapping and `node:fwadm`. A rootless pod cannot bind these ports on the host. ns8-mail already owns them on a standard NS8 node.
+- `netfilter-mailcow`, which edits the host firewall (iptables/nftables) with `NET_ADMIN` and host networking. That is impossible rootless; on NS8 the firewall belongs to the node agent.
+- `unbound-mailcow` with its configuration from `data/conf/unbound` (today it fails: `unable to open /etc/unbound/trusted-key.key`), and the other containers using it as their DNS server.
+- the configuration directories of dovecot, postfix, rspamd and SOGo mounted from `data/conf`, ofelia's job configuration (today: `open /etc/ofelia/config.ini: no such file or directory`), and certificates shared with postfix and dovecot.
 
 ## Get the configuration
 
@@ -235,23 +122,6 @@ Found by the NS8 module standards check. These must be resolved before a stable 
 - metadata: documentation_url is a placeholder
 - metadata: categories empty (use standard categories)
 - metadata: description.en needs >= 60 real chars (+ it translation)
-- ACME_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- CLAMD_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- DOCKERAPI_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- DOVECOT_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- MEMCACHED_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- NETFILTER_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- NGINX_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- OFELIA_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- OLEFY_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- PHPFPM_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- POSTFIX_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- POSTFIX_TLSPOL_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- REDIS_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- RSPAMD_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- SOGO_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- UNBOUND_IMAGE is used by the module but no image in the label provides it: leftover from the template?
-- WATCHDOG_IMAGE is used by the module but no image in the label provides it: leftover from the template?
 
 ## Upstream
 
