@@ -1,13 +1,12 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
 [Unit]
-Description=Podman  redis-mailcow-app.service
+Description=mailcow Redis
 BindsTo=mailcow.service
 After=mailcow.service
-Before=php-fpm-mailcow-app.service
+Before=php-fpm-mailcow-app.service dockerapi.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -17,22 +16,21 @@ Restart=always
 RestartSec=10
 TimeoutStartSec=300
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/redis-mailcow-app.pid %t/redis-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/redis-mailcow-app.pid  --cidfile %t/redis-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  redis-mailcow-app   \
-    --volume redis-vol:/data/:Z \
-    --volume %E/mailcow/data/conf/redis/redis-conf.sh:/redis-conf.sh:ro,z \
-    --env-file redis-mailcow.env \
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=redis-mailcow \
     --entrypoint=/bin/sh \
+    --env-file=mailcow.env \
+    --volume=redis-vol:/data:Z \
+    --volume=%E/state/mailcow/conf/redis/redis-conf.sh:/redis-conf.sh:ro,z \
     ${REDIS_IMAGE} /redis-conf.sh
-# Report started only when Redis answers with its password
-ExecStartPost=/usr/bin/podman exec redis-mailcow-app /bin/sh -c "for i in $$(seq 1 60); do redis-cli -a \"$$REDISPASS\" --no-auth-warning ping | grep -q PONG && exit 0; sleep 2; done; exit 1"
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/redis-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP redis-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/redis-mailcow-app.ctr-id
-PIDFile=%t/redis-mailcow-app.pid
+ExecStartPost=/usr/bin/podman exec %N /bin/sh -c "for i in $$(seq 1 60); do redis-cli -a \"$$REDISPASS\" --no-auth-warning ping | grep -q PONG && exit 0; sleep 2; done; exit 1"
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

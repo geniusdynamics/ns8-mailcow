@@ -5,13 +5,21 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-# If the control reaches this step, the service can be enabled and started
+# Restart mailcow with the new images, if it is configured
 
 set -e
 
 # Redirect any output to the journal (stderr)
 exec 1>&2
 
-systemctl --user try-restart mailcow.service mysql-mailcow-app.service \
-    redis-mailcow-app.service memcached-mailcow-app.service dockerapi.service \
-    php-fpm-mailcow-app.service nginx-mailcow-app.service
+cd "${AGENT_STATE_DIR}"
+if [[ ! -f mailcow.env ]]; then
+    exit 0 # not configured yet
+fi
+
+# The units of the web-only releases that no longer exist
+systemctl --user disable --now acme-mailcow-app.service ofelia-mailcow-app.service watchdog-mailcow-app.service 2>/dev/null || :
+systemctl --user daemon-reload
+
+touch .restart-required
+exec "${AGENT_INSTALL_DIR}/actions/configure-module/80start_services"

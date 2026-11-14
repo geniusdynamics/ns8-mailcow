@@ -5,9 +5,16 @@
     "description": "Configure mailcow",
     "examples": [
         {
-            "host": "mailcow.domain.org",
+            "host": "mail.example.org",
             "http2https": true,
-            "lets_encrypt": true
+            "lets_encrypt": true,
+            "netfilter_mode": "external",
+            "clamd_enabled": true
+        },
+        {
+            "host": "mail.example.org",
+            "http2https": true,
+            "lets_encrypt": false
         }
     ],
     "type": "object",
@@ -19,19 +26,30 @@
     "properties": {
         "host": {
             "type": "string",
-            "description": "Host name for the application, like 'mailcow.domain.org'",
+            "description": "Mail host name (MAILCOW_HOSTNAME): the name of the SMTP and IMAP server, of its certificate and of the web UI, like 'mail.example.org'",
             "format": "hostname",
             "pattern": "\\."
         },
         "lets_encrypt": {
             "type": "boolean",
             "title": "Let's Encrypt certificate",
-            "description": "Request a valid Let's Encrypt certificate."
+            "description": "Request a valid Let's Encrypt certificate. Postfix and Dovecot use it as well."
         },
         "http2https": {
             "type": "boolean",
             "title": "HTTP to HTTPS redirection",
             "description": "Redirect all the HTTP requests to HTTPS"
+        },
+        "netfilter_mode": {
+            "type": "string",
+            "enum": ["disabled", "external", "rootful"],
+            "title": "netfilter-mailcow mode",
+            "description": "disabled: netfilter-mailcow does not run. external: it only keeps the mailcow ban list (Manage Fail2Ban externally), served at https://HOST/f2b-banlist.php?id=BANLIST_ID. rootful: it bans attackers itself, in the network namespace of the mailcow pod. If omitted, the current value is kept (default: external)."
+        },
+        "clamd_enabled": {
+            "type": "boolean",
+            "title": "ClamAV",
+            "description": "Run the ClamAV antivirus. It needs about 1 GB of RAM more. If omitted, the current value is kept (default: true)."
         }
     }
 }

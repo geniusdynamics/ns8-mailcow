@@ -1,11 +1,11 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
 [Unit]
-Description=Podman  rspamd-mailcow-app.service
-After=mailcow.service dovecot-mailcow-app.service clamd-mailcow-app.service
+Description=mailcow rspamd (spam filter, DKIM)
+BindsTo=mailcow.service
+After=mailcow.service php-fpm-mailcow-app.service dovecot-mailcow-app.service unbound-mailcow-app.service redis-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -13,29 +13,29 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=900
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/rspamd-mailcow-app.pid %t/rspamd-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/rspamd-mailcow-app.pid  --cidfile %t/rspamd-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  rspamd-mailcow-app   \
-    --volume hooks-rspamd:/hooks:Z \
-    --volume %S/bin/rspamd/settings.conf:/etc/rspamd/settings.conf:Z \
-    --volume %S/bin/rspamd/set_worker_password.sh:/set_worker_password.sh:Z \
-    --volume %S/bin/rspamd/docker-entrypoint.sh:/docker-entrypoint.sh:Z \
-    --volume rspamd-custom:/etc/rspamd/custom:z \
-    --volume rspamd-overrided:/etc/rspamd/override.d:Z \
-    --volume rspamd-locald:/etc/rspamd/local.d:Z \
-    --volume rspamd-pluginsd:/etc/rspamd/plugins.d:Z \
-    --volume rspamd-lua:/etc/rspamd/lua/:ro,Z \
-    --volume conf-rspamd-rspamdconflocal:/etc/rspamd/rspamd.conf.local:Z \
-    --volume conf-rspamd-rspamdconfoverride:/etc/rspamd/rspamd.conf.override:Z \
-    --volume rspamd-vol:/var/lib/rspamd:Z   \
-    --env-file rspamd-mailcow.env  ${RSPAMD_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/rspamd-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP rspamd-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/rspamd-mailcow-app.ctr-id
-PIDFile=%t/rspamd-mailcow-app.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=rspamd-mailcow \
+    --env-file=mailcow.env \
+    --volume=%E/state/mailcow/hooks/rspamd:/hooks:Z \
+    --volume=%E/state/mailcow/conf/rspamd/custom:/etc/rspamd/custom:z \
+    --volume=%E/state/mailcow/conf/rspamd/override.d:/etc/rspamd/override.d:Z \
+    --volume=%E/state/mailcow/conf/rspamd/local.d:/etc/rspamd/local.d:Z \
+    --volume=%E/state/mailcow/conf/rspamd/plugins.d:/etc/rspamd/plugins.d:Z \
+    --volume=%E/state/mailcow/conf/rspamd/lua:/etc/rspamd/lua:ro,Z \
+    --volume=%E/state/mailcow/conf/rspamd/rspamd.conf.local:/etc/rspamd/rspamd.conf.local:Z \
+    --volume=%E/state/mailcow/conf/rspamd/rspamd.conf.override:/etc/rspamd/rspamd.conf.override:Z \
+    --volume=rspamd-vol-1:/var/lib/rspamd:z \
+    ${RSPAMD_IMAGE}
+ExecStartPost=%E/bin/wait-ready exec %N 840 bash -c "exec 3<>/dev/tcp/127.0.0.1/11334"
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

@@ -1,11 +1,11 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
 [Unit]
-Description=Podman  sogo-mailcow-app.service
-After=mailcow.service
+Description=mailcow SOGo (webmail, calendars, contacts, ActiveSync)
+BindsTo=mailcow.service
+After=mailcow.service php-fpm-mailcow-app.service memcached-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -13,24 +13,31 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=900
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/sogo-mailcow-app.pid %t/sogo-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/sogo-mailcow-app.pid  --cidfile %t/sogo-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  sogo-mailcow-app   \
-    --volume hooks-sogo:/hooks:Z \
-    --volume conf-sogo:/etc/sogo/:z \
-    --volume web-inc-initdbincphp:/init_db.inc.php:z \
-    --volume conf-sogo-custom:/usr/lib/GNUstep/SOGo/WebServerResources:z \
-    --volume mysql-socket-vol:/var/run/mysqld/:z \
-    --volume sogo-web-vol-1:/sogo_web:Z \
-    --volume sogo-userdata-backup-vol-1:/sogo_backup:Z   \
-    --env-file sogo-mailcow.env  ${SOGO_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/sogo-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP sogo-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/sogo-mailcow-app.ctr-id
-PIDFile=%t/sogo-mailcow-app.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=sogo-mailcow \
+    --env-file=mailcow.env \
+    --volume=%E/state/mailcow/hooks/sogo:/hooks:Z \
+    --volume=%E/state/mailcow/conf/sogo:/etc/sogo:z \
+    --volume=%E/state/mailcow/conf/sogo/custom-favicon.ico:/usr/local/lib/GNUstep/SOGo/WebServerResources/img/sogo.ico:z \
+    --volume=%E/state/mailcow/conf/sogo/custom-shortlogo.svg:/usr/local/lib/GNUstep/SOGo/WebServerResources/img/sogo-compact.svg:z \
+    --volume=%E/state/mailcow/conf/sogo/custom-fulllogo.svg:/usr/local/lib/GNUstep/SOGo/WebServerResources/img/sogo-full.svg:z \
+    --volume=%E/state/mailcow/conf/sogo/custom-fulllogo.png:/usr/local/lib/GNUstep/SOGo/WebServerResources/img/sogo-logo.png:z \
+    --volume=%E/state/mailcow/conf/sogo/custom-theme.js:/usr/local/lib/GNUstep/SOGo/WebServerResources/js/theme.js:z \
+    --volume=%E/state/mailcow/conf/sogo/custom-sogo.js:/usr/local/lib/GNUstep/SOGo/WebServerResources/js/custom-sogo.js:z \
+    --volume=mysql-socket-vol:/var/run/mysqld:z \
+    --volume=sogo-web-vol-1:/sogo_web:z \
+    --volume=sogo-userdata-backup-vol-1:/sogo_backup:Z \
+    ${SOGO_IMAGE}
+ExecStartPost=%E/bin/wait-ready exec %N 840 bash -c "exec 3<>/dev/tcp/127.0.0.1/20000"
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

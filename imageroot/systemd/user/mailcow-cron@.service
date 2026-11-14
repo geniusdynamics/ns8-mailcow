@@ -1,0 +1,18 @@
+#
+# Copyright (C) 2026 Genius Dynamics
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Periodic jobs of mailcow (the ofelia jobs of mailcow-dockerized), started
+# by the mailcow-cron-*.timer units
+
+[Unit]
+Description=mailcow %i jobs
+After=mailcow.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=%E/state/environment
+WorkingDirectory=%E/state
+ExecStart=%E/bin/mailcow-cron %i
+SyslogIdentifier=mailcow-cron

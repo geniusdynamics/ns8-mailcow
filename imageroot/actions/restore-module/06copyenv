@@ -10,14 +10,17 @@ import json
 import agent
 
 request = json.load(sys.stdin)
-
 original_environment = request['environment']
 
 for evar in [
         "TRAEFIK_HOST",
         "TRAEFIK_HTTP2HTTPS",
         "TRAEFIK_LETS_ENCRYPT",
+        "MAILCOW_HOSTNAME",
+        "NETFILTER_MODE",
+        "CLAMD_ENABLED",
     ]:
-    agent.set_env(evar, original_environment[evar])
+    if evar in original_environment:
+        agent.set_env(evar, original_environment[evar])
 
 agent.dump_env()
