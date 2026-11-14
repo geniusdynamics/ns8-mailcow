@@ -5,13 +5,24 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+# Load the dump of the mailcow database into a new MariaDB volume
+
 set -e -o pipefail
 exec 1>&2 # Redirect any output to the journal (stderr)
-# Prepare an initialization script that restores the dump file
+
+if [[ ! -f mysql-mailcow.sql ]]; then
+    echo "No database dump in the backup"
+    exit 0
+fi
+
+# secrets.env comes back from the backup; a backup of a web-only release
+# has none, and new secrets are generated
+python3 -c 'import mailcow_ns8; mailcow_ns8.ensure_secrets()'
+# shellcheck disable=SC1091
+source secrets.env
+
 mkdir -vp initdb.d
 mv -v mysql-mailcow.sql initdb.d
-
-# do the bash file to restore and exit once done
 cat - >initdb.d/zz_mysql-mailcow_restore.sh <<'EOS'
 # Print additional information:
 mysql --version
@@ -20,20 +31,21 @@ set -- true
 docker_temp_server_stop
 exit 0
 EOS
+trap 'rm -rf initdb.d/ restore-db.env' EXIT
 
-# once we exit we remove initdb.d
-trap 'rm -rfv initdb.d/' EXIT
+(
+    umask 077
+    printf 'MYSQL_ROOT_PASSWORD=%s\nMYSQL_DATABASE=%s\nMYSQL_USER=%s\nMYSQL_PASSWORD=%s\nMYSQL_INITDB_SKIP_TZINFO=1\n' \
+        "${DBROOT}" "${DBNAME}" "${DBUSER}" "${DBPASS}" > restore-db.env
+)
 
-# we start a container to initiate a database and load the dump
-# at the end of mysql-mailcow_restore.sh the dump is loaded and
-# we exit the container
+podman volume rm --force mysql-vol || :
 podman run \
   --rm \
   --interactive \
   --network=none \
   --volume=./initdb.d:/docker-entrypoint-initdb.d:z \
-  --volume mysql-vol:/var/lib/mysql/:Z \
-  \
-    --env-file mysql-mailcow.env \
+  --volume=mysql-vol:/var/lib/mysql:Z \
+  --env-file=restore-db.env \
   --replace --name=restore_db \
   "${MARIADB_IMAGE}"

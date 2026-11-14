@@ -4,19 +4,84 @@
 # Copyright (C) 2023 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
+
 set -e
 
 # Redirect any output to the journal (stderr)
 exec 1>&2
 
-# If the control reaches this step, the service can be enabled and started
+# shellcheck disable=SC1091
+source "${AGENT_STATE_DIR:-.}/environment"
 
+core_units=(
+    mailcow.service
+    mysql-mailcow-app.service
+    redis-mailcow-app.service
+    memcached-mailcow-app.service
+    unbound-mailcow-app.service
+    dockerapi.service
+    php-fpm-mailcow-app.service
+    sogo-mailcow-app.service
+    dovecot-mailcow-app.service
+    postfix-tlspol-mailcow-app.service
+    postfix-mailcow-app.service
+    olefy-mailcow-app.service
+    rspamd-mailcow-app.service
+    nginx-mailcow-app.service
+)
+timers=(
+    mailcow-cron-minutely.timer
+    mailcow-cron-5min.timer
+    mailcow-cron-20min.timer
+    mailcow-cron-30min.timer
+    mailcow-cron-daily.timer
+)
 
 # dockerapi talks to the Podman API socket of the module user
-systemctl --user enable podman.socket
-systemctl --user start podman.socket
+systemctl --user enable --now podman.socket
 
 systemctl --user enable mailcow.service
-systemctl --user restart mailcow.service mysql-mailcow-app.service \
-    redis-mailcow-app.service memcached-mailcow-app.service dockerapi.service \
-    php-fpm-mailcow-app.service nginx-mailcow-app.service
+
+# Restart every unit by name when the configuration changed (or the pod
+# does not run); else start the stopped ones and keep the running ones
+if [[ -f .restart-required ]] || ! systemctl --user -q is-active mailcow.service; then
+    restart=1
+    systemctl --user restart "${core_units[@]}"
+    rm -f .restart-required .reload-required
+else
+    restart=0
+    systemctl --user start "${core_units[@]}"
+    if [[ -f .reload-required ]]; then
+        # A new certificate
+        systemctl --user try-reload-or-restart postfix-mailcow-app.service dovecot-mailcow-app.service nginx-mailcow-app.service
+        rm -f .reload-required
+    fi
+fi
+
+# ClamAV is optional (clamd_enabled)
+if [[ "${CLAMD_ENABLED,,}" == "true" ]]; then
+    systemctl --user enable clamd-mailcow-app.service
+    if [[ ${restart} == 1 ]]; then
+        systemctl --user restart clamd-mailcow-app.service
+    else
+        systemctl --user start clamd-mailcow-app.service
+    fi
+else
+    systemctl --user disable --now clamd-mailcow-app.service
+fi
+
+# netfilter-mailcow (netfilter_mode): restart it when the mode changed
+if [[ "${NETFILTER_MODE}" == "disabled" ]]; then
+    systemctl --user disable --now netfilter-mailcow-app.service
+    rm -f .netfilter-mode
+else
+    systemctl --user enable netfilter-mailcow-app.service
+    if [[ ${restart} == 1 ]] || [[ "$(cat .netfilter-mode 2>/dev/null)" != "${NETFILTER_MODE}" ]]; then
+        systemctl --user restart netfilter-mailcow-app.service
+    else
+        systemctl --user start netfilter-mailcow-app.service
+    fi
+    echo "${NETFILTER_MODE}" > .netfilter-mode
+fi
+
+systemctl --user enable --now "${timers[@]}"

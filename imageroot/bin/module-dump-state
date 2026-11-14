@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+# Runs before the backup, in the state directory
+
 set -e
 
 if ! systemctl --user -q is-active mysql-mailcow-app.service; then
@@ -19,3 +21,8 @@ podman exec mysql-mailcow-app sh -c 'exec mariadb-dump -uroot -p"$MYSQL_ROOT_PAS
         --single-transaction \
         --quick \
         --add-drop-table' > mysql-mailcow.sql
+
+# Write the Redis data (dump.rdb in redis-vol) to disk
+if systemctl --user -q is-active redis-mailcow-app.service; then
+    podman exec redis-mailcow-app sh -c 'exec redis-cli -a "$REDISPASS" --no-auth-warning SAVE' >&2
+fi

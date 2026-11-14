@@ -5,6 +5,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+# Configure and start mailcow with the settings of the backup. Let's Encrypt
+# stays off: the DNS records may not point to this node yet.
+
 import sys
 import json
 import agent
@@ -15,7 +18,9 @@ renv = request['environment']
 
 configure_retval = agent.tasks.run(agent_id=os.environ['AGENT_ID'], action='configure-module', data={
     "lets_encrypt": False,
-    "host": renv["TRAEFIK_HOST"],
+    "host": renv.get("MAILCOW_HOSTNAME") or renv["TRAEFIK_HOST"],
     "http2https": renv.get("TRAEFIK_HTTP2HTTPS", "True").lower() == "true",
+    "netfilter_mode": renv.get("NETFILTER_MODE", "external"),
+    "clamd_enabled": renv.get("CLAMD_ENABLED", "True").lower() == "true",
 })
 agent.assert_exp(configure_retval['exit_code'] == 0, "The configure-module subtask failed!")

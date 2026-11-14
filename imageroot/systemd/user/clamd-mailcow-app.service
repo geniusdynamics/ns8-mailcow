@@ -1,10 +1,10 @@
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Genius Dynamics
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
 [Unit]
-Description=Podman  clamd-mailcow-app.service
+Description=mailcow ClamAV (optional, see the clamd_enabled setting)
+BindsTo=mailcow.service
 After=mailcow.service unbound-mailcow-app.service
 
 [Service]
@@ -13,19 +13,21 @@ EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
 RestartSec=10
+TimeoutStartSec=300
 TimeoutStopSec=70
-ExecStartPre=/bin/mkdir -p tmp
-ExecStartPre=/bin/rm -f %t/clamd-mailcow-app.pid %t/clamd-mailcow-app.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/clamd-mailcow-app.pid  --cidfile %t/clamd-mailcow-app.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  clamd-mailcow-app   \
-    --volume conf-clamav:/etc/clamav/:Z \
-    --volume clamd-db-vol:/var/lib/clamav:Z   \
-    --env-file clamd-mailcow.env  ${CLAMD_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/clamd-mailcow-app.ctr-id -t 10
-ExecReload=/usr/bin/podman kill -s HUP clamd-mailcow-app
-SyslogIdentifier=%u
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/clamd-mailcow-app.ctr-id
-PIDFile=%t/clamd-mailcow-app.pid
+ExecStartPre=/bin/rm -f %t/%N.pid %t/%N.ctr-id
+ExecStart=/usr/bin/podman run --detach --conmon-pidfile=%t/%N.pid --cidfile=%t/%N.ctr-id --cgroups=no-conmon \
+    --pod-id-file=%t/mailcow.pod-id --replace --name=%N --log-opt=tag=%N \
+    --label=com.docker.compose.project=mailcowdockerized --label=com.docker.compose.service=clamd-mailcow \
+    --env-file=mailcow.env \
+    --volume=%E/state/mailcow/conf/clamav:/etc/clamav:Z \
+    --volume=clamd-db-vol-1:/var/lib/clamav:Z \
+    ${CLAMD_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%N.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/%N.ctr-id
+PIDFile=%t/%N.pid
 Type=forking
+SyslogIdentifier=%N
 
 [Install]
 WantedBy=default.target

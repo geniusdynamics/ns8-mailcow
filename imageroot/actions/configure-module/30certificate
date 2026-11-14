@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Genius Dynamics
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Certificate of Postfix, Dovecot and nginx (state/ssl, mounted on
+# /etc/ssl/mail): the Traefik certificate of the mail host name, like
+# ns8-mail. Until Traefik has one, get-certificate writes a self-signed
+# certificate; the certificate-changed event replaces it.
+
+import os
+import shutil
+import agent
+
+def certificate_names(path):
+    try:
+        from cryptography import x509
+        with open(path, "rb") as fcert:
+            cert = x509.load_pem_x509_certificate(fcert.read())
+        san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
+        return san.value.get_values_for_type(x509.DNSName)
+    except Exception:
+        return []
+
+os.makedirs("ssl", exist_ok=True)
+hostname = os.environ['MAILCOW_HOSTNAME']
+if os.path.exists("ssl/cert.pem") and hostname not in certificate_names("ssl/cert.pem"):
+    # Another host name: a new self-signed certificate, until Traefik has one
+    os.unlink("ssl/cert.pem")
+proc = agent.run_helper('get-certificate', '--cert-file=ssl/cert.pem', '--key-file=ssl/key.pem',
+                        hostname)
+# 3: unchanged. 1: Traefik has no certificate for the name (yet), the
+# current files are kept
+agent.assert_exp(os.path.exists("ssl/cert.pem") and os.path.exists("ssl/key.pem"), "no certificate")
+if proc.returncode == 0:
+    # 80start_services reloads Postfix, Dovecot and nginx
+    open(".reload-required", "w").close()
+
+# Dovecot reads ssl_dh from the same directory
+if not os.path.exists("ssl/dhparams.pem"):
+    shutil.copyfile(os.path.join(os.environ["AGENT_INSTALL_DIR"], "mailcow-dist/assets/ssl-example/dhparams.pem"),
+                    "ssl/dhparams.pem")

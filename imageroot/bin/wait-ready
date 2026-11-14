@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Genius Dynamics
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+"""Wait until a service of the pod is ready (ExecStartPost of the units),
+so that a unit reports "started" only once it serves.
+
+  wait-ready exec CONTAINER TIMEOUT COMMAND [ARG...]
+      run COMMAND in CONTAINER until it succeeds
+  wait-ready http URL TIMEOUT
+      until URL answers with any HTTP status
+"""
+
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+
+
+def check_exec(container, command):
+    proc = subprocess.run(["podman", "exec", container] + command,
+                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return proc.returncode == 0
+
+
+def check_http(url):
+    try:
+        with urllib.request.urlopen(url, timeout=10):
+            return True
+    except urllib.error.HTTPError:
+        return True  # the server answers
+    except Exception:
+        return False
+
+
+def main():
+    mode = sys.argv[1]
+    if mode == "exec":
+        container, timeout, command = sys.argv[2], int(sys.argv[3]), sys.argv[4:]
+        check = lambda: check_exec(container, command)
+        what = f"{container}: {' '.join(command)}"
+    elif mode == "http":
+        url, timeout = sys.argv[2], int(sys.argv[3])
+        check = lambda: check_http(url)
+        what = url
+    else:
+        print(__doc__, file=sys.stderr)
+        return 2
+    deadline = time.monotonic() + timeout
+    while True:
+        if check():
+            print(f"ready: {what}", file=sys.stderr)
+            return 0
+        if time.monotonic() > deadline:
+            print(f"<3>not ready after {timeout}s: {what}", file=sys.stderr)
+            return 1
+        time.sleep(3)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,58 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2026 Genius Dynamics
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# The ofelia jobs of mailcow-dockerized (labels of docker-compose.yml), run
+# by the mailcow-cron-*.timer units with podman exec. The commands are the
+# ones of the labels. MASTER is always "y" in this module.
+
+period=${1:?usage: mailcow-cron minutely|5min|20min|30min|daily}
+rc=0
+
+job() {
+    local container=$1 command=$2
+    if [[ "$(podman container inspect -f '{{.State.Running}}' "${container}" 2>/dev/null)" != "true" ]]; then
+        return 0 # the service is stopped or disabled
+    fi
+    if ! podman exec "${container}" /bin/bash -c "${command}"; then
+        echo "<4>${container}: job failed: ${command}" >&2
+        rc=1
+    fi
+}
+
+case "${period}" in
+minutely)
+    job php-fpm-mailcow-app 'php /crons/identity-sync.php'
+    job php-fpm-mailcow-app 'php /crons/group-grants.php'
+    job php-fpm-mailcow-app 'php /crons/imapsync-oauth-refresh.php'
+    job sogo-mailcow-app '/usr/local/bin/gosu sogo /usr/sbin/sogo-tool -v expire-sessions ${SOGO_EXPIRE_SESSION}'
+    job sogo-mailcow-app '/usr/local/bin/gosu sogo /usr/sbin/sogo-ealarms-notify -p /etc/sogo/cron.creds'
+    job dovecot-mailcow-app '/usr/local/bin/gosu nobody /usr/local/bin/imapsync_runner.py'
+    job dovecot-mailcow-app '/usr/local/bin/gosu vmail /usr/local/bin/trim_logs.sh'
+    ;;
+5min)
+    job sogo-mailcow-app '/usr/local/bin/gosu sogo /usr/sbin/sogo-tool update-autoreply -p /etc/sogo/sieve.creds'
+    job dovecot-mailcow-app '/usr/local/bin/gosu vmail /usr/local/bin/repl_health.sh'
+    ;;
+20min)
+    job dovecot-mailcow-app '/usr/local/bin/gosu vmail /usr/local/bin/quarantine_notify.py'
+    ;;
+30min)
+    job dovecot-mailcow-app 'source /source_env.sh ; /usr/local/bin/gosu vmail /usr/local/bin/maildir_gc.sh'
+    ;;
+daily)
+    job sogo-mailcow-app '/usr/local/bin/gosu sogo /usr/sbin/sogo-tool backup /sogo_backup ALL'
+    job dovecot-mailcow-app '/usr/local/bin/gosu vmail /usr/local/bin/clean_q_aged.sh'
+    job dovecot-mailcow-app '/usr/local/bin/sa-rules.sh'
+    job dovecot-mailcow-app '/usr/local/bin/gosu vmail /usr/local/bin/optimize-fts.sh'
+    ;;
+*)
+    echo "unknown period ${period}" >&2
+    exit 2
+    ;;
+esac
+
+exit ${rc}
