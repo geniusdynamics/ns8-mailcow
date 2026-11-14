@@ -1,0 +1,22 @@
+# CrowdSec scenario of the NS8 mailcow module, for the events of the
+# geniusdynamics/mailcow-logs parser. Install it in scenarios/ of NS8
+# CrowdSec, see README.md.
+# Tuned like the hub crowdsecurity/dovecot-spam and the NS8 webtop-bf
+# scenarios; mailcow's own netfilter default is 10 failures in 10 minutes.
+type: leaky
+name: geniusdynamics/mailcow-bf
+description: "Detect brute force against mailcow logins (IMAP, POP3, SMTP AUTH, Sieve, SOGo, UI)"
+filter: "evt.Meta.log_type == 'mailcow_auth_failed'"
+groupby: evt.Meta.source_ip
+leakspeed: "1m"
+capacity: 5
+blackhole: 5m
+labels:
+  remediation: true
+  confidence: 3
+  spoofable: 0
+  classification:
+    - attack.T1110
+  behavior: "generic:bruteforce"
+  label: "mailcow brute force"
+  service: mailcow

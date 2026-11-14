@@ -1,0 +1,53 @@
+# CrowdSec parser (stage s01-parse) of the NS8 mailcow module.
+# Install it in parsers/s01-parse/ of NS8 CrowdSec, see README.md.
+#
+# The containers of mailcow log to the journal of the node with their unit
+# name as identifier (podman --log-opt=tag=%N). NS8 CrowdSec reads the whole
+# journal as syslog, so evt.Parsed.program is that identifier.
+#
+# - php-fpm-mailcow-app: mailcowauth.php checks every IMAP, POP3, SMTP AUTH
+#   and ManageSieve login of Dovecot and Postfix, and the UI login
+# - sogo-mailcow-app: webmail logins
+#
+# The lines are the ones netfilter-mailcow matches (rules 1, 3 and 6).
+# SMTP AUTH failures and non-SMTP commands are also parsed by the
+# crowdsecurity/postfix collection: Postfix copies its log to the journal of
+# the node as "postfix/smtpd".
+name: geniusdynamics/mailcow-logs
+description: "Parse the authentication failures of mailcow (NS8 module)"
+filter: "evt.Parsed.program in ['php-fpm-mailcow-app', 'sogo-mailcow-app']"
+onsuccess: next_stage
+nodes:
+  - grok:
+      pattern: 'MAILCOWAUTH: Login failed for user %{DATA:mailcow_user} with service %{WORD:mailcow_service} from IP %{IP:mailcow_ip}'
+      apply_on: message
+      statics:
+        - meta: mailcow_service
+          expression: evt.Parsed.mailcow_service
+        - meta: source_ip
+          expression: evt.Parsed.mailcow_ip
+  - grok:
+      pattern: 'mailcow UI: Invalid password for %{DATA:mailcow_user} by %{IP:mailcow_ip}'
+      apply_on: message
+      statics:
+        - meta: mailcow_service
+          value: ui
+        - meta: source_ip
+          expression: evt.Parsed.mailcow_ip
+  - grok:
+      # Behind Traefik and nginx SOGo logs a list of addresses: the last one
+      # was added by nginx, from the X-Forwarded-For header of Traefik
+      pattern: "Login from '%{DATA:sogo_ips}' for user '%{DATA:mailcow_user}' might not have worked"
+      apply_on: message
+      statics:
+        - meta: mailcow_service
+          value: sogo
+        - meta: source_ip
+          expression: "TrimSpace(Split(evt.Parsed.sogo_ips, ',')[len(Split(evt.Parsed.sogo_ips, ',')) - 1])"
+statics:
+  - meta: log_type
+    value: mailcow_auth_failed
+  - meta: service
+    value: mailcow
+  - meta: target_user
+    expression: evt.Parsed.mailcow_user
