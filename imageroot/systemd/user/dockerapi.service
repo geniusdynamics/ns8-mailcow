@@ -5,19 +5,22 @@
 
 [Unit]
 Description=Podman dockerapi.service
-After=mailcow.service
+BindsTo=mailcow.service
+After=mailcow.service redis-mailcow-app.service
+Before=php-fpm-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
-Environment=XDG_RUNTIME_DIR=/run/user/%U
 EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
+RestartSec=10
 TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/dockerapi.pid %t/dockerapi.ctr-id
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/dockerapi.pid  --cidfile %t/dockerapi.ctr-id --cgroups=no-conmon  --pod-id-file %t/mailcow.pod-id --replace -d --name  dockerapi   \
-    --volume ${XDG_RUNTIME_DIR}/podman/podman.sock:/var/run/docker.sock:ro,z \
+    --volume %t/podman/podman.sock:/var/run/docker.sock \
+    --security-opt label=disable \
     --env-file dockerapi-mailcow.env  ${DOCKERAPI_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/dockerapi.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP dockerapi

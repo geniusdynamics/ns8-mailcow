@@ -5,43 +5,45 @@
 
 [Unit]
 Description=Podman  php-fpm-mailcow-app.service
-After=mailcow.service redis-mailcow-app.service
+BindsTo=mailcow.service
+After=mailcow.service mysql-mailcow-app.service redis-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
 EnvironmentFile=%E/state/environment
 WorkingDirectory=%E/state
 Restart=always
+RestartSec=10
 TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p tmp
 ExecStartPre=/bin/rm -f %t/php-fpm-mailcow-app.pid %t/php-fpm-mailcow-app.ctr-id
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/php-fpm-mailcow-app.pid --cidfile %t/php-fpm-mailcow-app.ctr-id --cgroups=no-conmon --pod-id-file %t/mailcow.pod-id --replace -d --name php-fpm-mailcow-app \
-    --volume %S/mailcow/data/hooks/phpfpm:/hooks:Z \
-    --volume %S/bin/php-fpm-entrypoint:/docker-entrypoint.sh:Z \
-    --volume %S/mailcow/data/web:/web:z \
-    --volume %S/mailcow/data/conf/rspamd/dynmaps:/dynmaps:ro,z \
-    --volume %S/mailcow/data/conf/rspamd/custom:/rspamd_custom_maps:z \
-    --volume %S/mailcow/data/conf/dovecot/auth/mailcowauth.php:/mailcowauth/mailcowauth.php:z \
-    --volume %S/mailcow/data/web/inc/functions.inc.php:/mailcowauth/functions.inc.php:z \
-    --volume %S/mailcow/data/web/inc/functions.auth.inc.php:/mailcowauth/functions.auth.inc.php:z \
-    --volume %S/mailcow/data/web/inc/sessions.inc.php:/mailcowauth/sessions.inc.php:z \
-    --volume %S/mailcow/data/web/inc/functions.mailbox.inc.php:/mailcowauth/functions.mailbox.inc.php:z \
-    --volume %S/mailcow/data/web/inc/functions.ratelimit.inc.php:/mailcowauth/functions.ratelimit.inc.php:z \
-    --volume %S/mailcow/data/web/inc/functions.acl.inc.php:/mailcowauth/functions.acl.inc.php:z \
+    --volume %E/mailcow/data/hooks/phpfpm:/hooks:Z \
+    --volume %E/bin/php-fpm-entrypoint:/docker-entrypoint.sh:Z \
+    --volume %E/mailcow/data/web:/web:z \
+    --volume %E/mailcow/data/conf/rspamd/dynmaps:/dynmaps:ro,z \
+    --volume %E/mailcow/data/conf/rspamd/custom:/rspamd_custom_maps:z \
+    --volume %E/mailcow/data/conf/dovecot/auth/mailcowauth.php:/mailcowauth/mailcowauth.php:z \
+    --volume %E/mailcow/data/web/inc/functions.inc.php:/mailcowauth/functions.inc.php:z \
+    --volume %E/mailcow/data/web/inc/functions.auth.inc.php:/mailcowauth/functions.auth.inc.php:z \
+    --volume %E/mailcow/data/web/inc/sessions.inc.php:/mailcowauth/sessions.inc.php:z \
+    --volume %E/mailcow/data/web/inc/functions.mailbox.inc.php:/mailcowauth/functions.mailbox.inc.php:z \
+    --volume %E/mailcow/data/web/inc/functions.ratelimit.inc.php:/mailcowauth/functions.ratelimit.inc.php:z \
+    --volume %E/mailcow/data/web/inc/functions.acl.inc.php:/mailcowauth/functions.acl.inc.php:z \
     --volume rspamd-vol-1:/var/lib/rspamd:Z \
     --volume mysql-socket-vol:/var/run/mysqld/:z \
-    --volume %S/mailcow/data/conf/sogo:/etc/sogo:z \
-    --volume %S/mailcow/data/conf/rspamd/meta_exporter:/meta_exporter:ro,z \
-    --volume %S/mailcow/data/conf/phpfpm/crons:/crons:z \
-    --volume %S/mailcow/data/conf/phpfpm/sogo-sso:/etc/sogo-sso:z \
-    --volume %S/mailcow/data/conf/phpfpm/php-fpm.d/pools.conf:/usr/local/etc/php-fpm.d/z-pools.conf:Z \
-    --volume %S/mailcow/data/conf/phpfpm/php-conf.d/opcache-recommended.ini:/usr/local/etc/php/conf.d/opcache-recommended.ini:Z \
-    --volume %S/mailcow/data/conf/phpfpm/php-conf.d/upload.ini:/usr/local/etc/php/conf.d/upload.ini:Z \
-    --volume %S/mailcow/data/conf/phpfpm/php-conf.d/other.ini:/usr/local/etc/php/conf.d/zzz-other.ini:Z \
-    --volume %S/mailcow/data/conf/dovecot/global_sieve_before:/global_sieve/before:z \
-    --volume %S/mailcow/data/conf/dovecot/global_sieve_after:/global_sieve/after:z \
-    --volume %S/mailcow/data/assets/templates:/tpls:z \
-    --volume %S/mailcow/data/conf/nginx:/etc/nginx/conf.d:z \
+    --volume %E/mailcow/data/conf/sogo:/etc/sogo:z \
+    --volume %E/mailcow/data/conf/rspamd/meta_exporter:/meta_exporter:ro,z \
+    --volume %E/mailcow/data/conf/phpfpm/crons:/crons:z \
+    --volume %E/mailcow/data/conf/phpfpm/sogo-sso:/etc/sogo-sso:z \
+    --volume %E/mailcow/data/conf/phpfpm/php-fpm.d/pools.conf:/usr/local/etc/php-fpm.d/z-pools.conf:Z \
+    --volume %E/mailcow/data/conf/phpfpm/php-conf.d/opcache-recommended.ini:/usr/local/etc/php/conf.d/opcache-recommended.ini:Z \
+    --volume %E/mailcow/data/conf/phpfpm/php-conf.d/upload.ini:/usr/local/etc/php/conf.d/upload.ini:Z \
+    --volume %E/mailcow/data/conf/phpfpm/php-conf.d/other.ini:/usr/local/etc/php/conf.d/zzz-other.ini:Z \
+    --volume %E/mailcow/data/conf/dovecot/global_sieve_before:/global_sieve/before:z \
+    --volume %E/mailcow/data/conf/dovecot/global_sieve_after:/global_sieve/after:z \
+    --volume %E/mailcow/data/assets/templates:/tpls:z \
+    --volume %E/mailcow/data/conf/nginx:/etc/nginx/conf.d:z \
     --env-file php-fpm-mailcow.env ${PHPFPM_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/php-fpm-mailcow-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP php-fpm-mailcow-app

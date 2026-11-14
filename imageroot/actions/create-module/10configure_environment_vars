@@ -14,6 +14,17 @@ import os
 # If parsing fails, output everything to stderr
 data = json.load(sys.stdin)
 
+
+def write_envfile(name, values):
+    """Write a KEY=VALUE file readable only by the module user (0600)"""
+    tmp = f"{name}.{os.getpid()}.tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        for key, value in values.items():
+            f.write(f"{key}={value}\n")
+    os.replace(tmp, name)
+
+
 # This is specific to you module, so you need to change it accordingly.
 
 
@@ -39,9 +50,12 @@ mysql_mailcow = {
     "MYSQL_USER": MYSQL_USER,
     "MYSQL_PASSWORD": MYSQL_PASSWORD,
 }
-agent.write_envfile("mysql-mailcow.env", mysql_mailcow)
+# Keep the secrets of an existing instance (clone, restore)
+if not os.path.exists("mysql-mailcow.env"):
+    write_envfile("mysql-mailcow.env", mysql_mailcow)
 REDISPASS = generate_random_password(16)
 REDISMASTERPASS = generate_random_password(16)
 redis = {"REDISPASS": REDISPASS, "REDISMASTERPASS": REDISMASTERPASS}
 
-agent.write_envfile("redis.env", redis)
+if not os.path.exists("redis.env"):
+    write_envfile("redis.env", redis)

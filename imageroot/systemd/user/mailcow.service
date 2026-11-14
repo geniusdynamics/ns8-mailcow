@@ -7,12 +7,18 @@
 # This systemd unit starts a mailcow instance using Podman.
 # Most parts of this file come from podman-generate-systemd.
 #
+# Only the web UI runs: MariaDB, Redis, memcached, dockerapi, PHP-FPM and
+# nginx. The UI refuses to load unless tcp://dockerapi:443 answers, so the
+# pod maps that name to 127.0.0.1 and nginx keeps its HTTPS server on 8443. The
+# mail services (postfix, dovecot, rspamd, clamd, SOGo...) need public mail
+# ports, a docker API socket and their own configuration: their units are
+# kept but not started yet. See README.md.
+#
 
 [Unit]
 Description=Podman mailcow.service
-Wants=netfilter-mailcow-app.service olefy-mailcow-app.service dockerapi.service unbound-mailcow-app.service clamd-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service postfix-mailcow-app.service memcached-mailcow-app.service acme-mailcow-app.service watchdog-mailcow-app.service rspamd-mailcow-app.service ofelia-mailcow-app.service php-fpm-mailcow-app.service nginx-mailcow-app.service
-Requires=mysql-mailcow-app.service redis-mailcow-app.service 
-Before=netfilter-mailcow-app.service olefy-mailcow-app.service dockerapi.service unbound-mailcow-app.service clamd-mailcow-app.service sogo-mailcow-app.service dovecot-mailcow-app.service postfix-tlspol-mailcow-app.service postfix-mailcow-app.service memcached-mailcow-app.service acme-mailcow-app.service watchdog-mailcow-app.service rspamd-mailcow-app.service ofelia-mailcow-app.service php-fpm-mailcow-app.service
+Requires=mysql-mailcow-app.service redis-mailcow-app.service memcached-mailcow-app.service dockerapi.service php-fpm-mailcow-app.service nginx-mailcow-app.service
+Before=mysql-mailcow-app.service redis-mailcow-app.service memcached-mailcow-app.service dockerapi.service php-fpm-mailcow-app.service nginx-mailcow-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -20,7 +26,7 @@ EnvironmentFile=-%E/state/environment
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/mailcow.pid %t/mailcow.pod-id
-ExecStartPre=/usr/bin/podman pod create --infra-conmon-pidfile %t/mailcow.pid  --pod-id-file %t/mailcow.pod-id  --name mailcow  --publish 127.0.0.1:${TCP_PORT}:80 --replace
+ExecStartPre=/usr/bin/podman pod create --infra-conmon-pidfile %t/mailcow.pid  --pod-id-file %t/mailcow.pod-id  --name mailcow  --publish 127.0.0.1:${TCP_PORT}:80 --add-host dockerapi:127.0.0.1 --replace
 ExecStart=/usr/bin/podman pod start --pod-id-file %t/mailcow.pod-id
 ExecStop=/usr/bin/podman pod stop --ignore --pod-id-file %t/mailcow.pod-id -t 10
 ExecStopPost=/usr/bin/podman pod rm --ignore -f --pod-id-file %t/mailcow.pod-id
