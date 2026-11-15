@@ -35,6 +35,7 @@ timers=(
     mailcow-cron-20min.timer
     mailcow-cron-30min.timer
     mailcow-cron-daily.timer
+    mailcow-domain-routes.timer
 )
 
 # dockerapi talks to the Podman API socket of the module user

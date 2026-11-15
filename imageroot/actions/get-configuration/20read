@@ -12,9 +12,43 @@
 import json
 import os
 import sys
+import agent
+import agent.tasks
 import mailcow_ns8
 
 settings = mailcow_ns8.settings_from_env()
 settings["mail_ports"] = [int(port.split("/")[0]) for port in mailcow_ns8.MAIL_PORTS]
 settings["mailcow_release"] = os.getenv("MAILCOW_RELEASE", "")
+
+# Names served by the routes of bin/sync-domain-routes, with the state of
+# their Let's Encrypt certificate as Traefik reports it
+try:
+    with open("domain-routes.json") as fstate:
+        routes_state = json.load(fstate)
+except (FileNotFoundError, ValueError):
+    routes_state = {}
+pending = set()
+if routes_state.get("routes") and settings["lets_encrypt"]:
+    try:
+        response = agent.tasks.run(agent_id=agent.resolve_agent_id("traefik@node"), action="list-routes",
+                                   data={"expand_list": True}, extra={"isNotificationHidden": True})
+        prefix = os.environ["MODULE_ID"] + "-san-"
+        for route in response.get("output") or []:
+            if isinstance(route, dict) and route.get("instance", "").startswith(prefix) \
+                    and route.get("lets_encrypt_status") == "pending":
+                pending.add(route["instance"].removeprefix(prefix))
+    except Exception as ex:
+        print(agent.SD_WARNING + f"list-routes failed: {ex}", file=sys.stderr)
+names = []
+for name, conf in sorted(routes_state.get("routes", {}).items()):
+    if not conf.get("lets_encrypt"):
+        status = "no_lets_encrypt"
+    elif name in pending:
+        status = "pending" # no certificate yet: check the DNS records of the name
+    else:
+        status = "obtained"
+    names.append({"name": name, "status": status})
+for name in routes_state.get("skipped", []):
+    names.append({"name": name, "status": "used_by_another_route"})
+settings["certificate_names"] = names
 json.dump(settings, fp=sys.stdout)
