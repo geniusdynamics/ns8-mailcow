@@ -74,6 +74,7 @@ CrowdSec has the mailcow parser
     Should Be Equal As Integers    ${rc}    0    ${output}
 
 CrowdSec explains
+    # cscli explain needs the local API, which restarts after the reload
     [Arguments]    ${line}    ${expected}
     # A public address: the whitelist parser skips private ones
     ${line} =    Replace String Using Regexp    ${line}    \\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b    203.0.113.5
@@ -172,11 +173,11 @@ Check the CrowdSec rules
     Should Be Equal As Integers    ${rc}  0
     Wait Until Keyword Succeeds    5 min    10 sec    CrowdSec has the mailcow parser
     ${line} =    Journal of the node has    php-fpm-mailcow-app    MAILCOWAUTH: Login failed
-    CrowdSec explains    ${line}    geniusdynamics/mailcow-logs
-    CrowdSec explains    ${line}    geniusdynamics/mailcow-bf
+    Wait Until Keyword Succeeds    3 min    10 sec    CrowdSec explains    ${line}    geniusdynamics/mailcow-logs
+    Wait Until Keyword Succeeds    3 min    10 sec    CrowdSec explains    ${line}    geniusdynamics/mailcow-bf
     ${line} =    Journal of the node has    postfix/submission/smtpd    authentication failed
-    CrowdSec explains    ${line}    crowdsecurity/postfix-logs
-    CrowdSec explains    ${line}    crowdsecurity/postfix-spam
+    Wait Until Keyword Succeeds    3 min    10 sec    CrowdSec explains    ${line}    crowdsecurity/postfix-logs
+    Wait Until Keyword Succeeds    3 min    10 sec    CrowdSec explains    ${line}    crowdsecurity/postfix-spam
     [Teardown]    Run Keyword If    '${crowdsec_id}' != ''    Execute Command    remove-module --no-preserve ${crowdsec_id}
 
 Check netfilter in rootful mode
