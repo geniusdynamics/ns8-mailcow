@@ -59,6 +59,44 @@
               }}</template>
             </cv-toggle>
             <cv-toggle
+              value="domainCertificates"
+              :label="$t('settings.domain_certificates')"
+              v-model="isDomainCertificatesEnabled"
+              :disabled="loading.getConfiguration || loading.configureModule"
+              class="mg-bottom"
+            >
+              <template slot="text-left">{{
+                $t("settings.disabled")
+              }}</template>
+              <template slot="text-right">{{
+                $t("settings.enabled")
+              }}</template>
+            </cv-toggle>
+            <p class="mg-bottom helper maxwidth">
+              {{ $t("settings.domain_certificates_helper") }}
+            </p>
+            <cv-text-area
+              :label="$t('settings.additional_names')"
+              v-model.trim="additionalNames"
+              :helper-text="$t('settings.additional_names_helper')"
+              :invalid-message="error.additional_names"
+              :disabled="loading.getConfiguration || loading.configureModule"
+              class="mg-bottom maxwidth"
+              ref="additional_names"
+            >
+            </cv-text-area>
+            <div v-if="certificateNames.length" class="mg-bottom maxwidth">
+              <label class="bx--label">{{
+                $t("settings.certificate_names")
+              }}</label>
+              <ul>
+                <li v-for="item in certificateNames" :key="item.name">
+                  {{ item.name }}:
+                  {{ $t("settings.certificate_status_" + item.status) }}
+                </li>
+              </ul>
+            </div>
+            <cv-toggle
               value="clamdEnabled"
               :label="$t('settings.clamd_enabled')"
               v-model="isClamdEnabled"
@@ -175,6 +213,9 @@ export default {
       isHttpToHttpsEnabled: true,
       isClamdEnabled: true,
       netfilterMode: "external",
+      isDomainCertificatesEnabled: false,
+      additionalNames: "",
+      certificateNames: [],
       mailPorts: [25, 465, 587, 143, 993, 110, 995, 4190],
       loading: {
         getConfiguration: false,
@@ -188,6 +229,7 @@ export default {
         http2https: "",
         netfilter_mode: "",
         clamd_enabled: "",
+        additional_names: "",
       },
     };
   },
@@ -257,6 +299,9 @@ export default {
       this.isHttpToHttpsEnabled = config.http2https !== false;
       this.isClamdEnabled = config.clamd_enabled !== false;
       this.netfilterMode = config.netfilter_mode || "external";
+      this.isDomainCertificatesEnabled = config.domain_certificates === true;
+      this.additionalNames = (config.additional_names || []).join("\n");
+      this.certificateNames = config.certificate_names || [];
       if (config.mail_ports) {
         this.mailPorts = config.mail_ports;
       }
@@ -330,6 +375,11 @@ export default {
             http2https: this.isHttpToHttpsEnabled,
             netfilter_mode: this.netfilterMode,
             clamd_enabled: this.isClamdEnabled,
+            domain_certificates: this.isDomainCertificatesEnabled,
+            additional_names: this.additionalNames
+              .split(/[\s,]+/)
+              .map((name) => name.trim().toLowerCase())
+              .filter((name) => name),
           },
           extra: {
             title: this.$t("settings.instance_configuration", {

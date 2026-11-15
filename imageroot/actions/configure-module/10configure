@@ -25,6 +25,9 @@ settings = {
     "lets_encrypt": data.get("lets_encrypt", False),
     "netfilter_mode": data.get("netfilter_mode", current["netfilter_mode"]),
     "clamd_enabled": data.get("clamd_enabled", current["clamd_enabled"]),
+    "domain_certificates": data.get("domain_certificates", current["domain_certificates"]
+                                    if "DOMAIN_CERTIFICATES" in os.environ else data.get("lets_encrypt", False)),
+    "additional_names": sorted({name.lower() for name in data.get("additional_names", current["additional_names"])}),
 }
 if settings["netfilter_mode"] not in mailcow_ns8.NETFILTER_MODES:
     settings["netfilter_mode"] = mailcow_ns8.DEFAULT_NETFILTER_MODE
@@ -35,6 +38,8 @@ agent.set_env("TRAEFIK_LETS_ENCRYPT", settings["lets_encrypt"])
 agent.set_env("MAILCOW_HOSTNAME", settings["host"])
 agent.set_env("NETFILTER_MODE", settings["netfilter_mode"])
 agent.set_env("CLAMD_ENABLED", settings["clamd_enabled"])
+agent.set_env("DOMAIN_CERTIFICATES", settings["domain_certificates"])
+agent.set_env("ADDITIONAL_NAMES", ",".join(settings["additional_names"]))
 agent.set_env("MAILCOW_RELEASE", mailcow_ns8.dist_value("RELEASE"))
 
 # Copy the configuration of the vendored mailcow-dockerized release: some

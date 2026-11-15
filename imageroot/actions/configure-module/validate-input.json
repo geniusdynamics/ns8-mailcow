@@ -9,7 +9,11 @@
             "http2https": true,
             "lets_encrypt": true,
             "netfilter_mode": "external",
-            "clamd_enabled": true
+            "clamd_enabled": true,
+            "domain_certificates": true,
+            "additional_names": [
+                "webmail.example.org"
+            ]
         },
         {
             "host": "mail.example.org",
@@ -42,7 +46,11 @@
         },
         "netfilter_mode": {
             "type": "string",
-            "enum": ["disabled", "external", "rootful"],
+            "enum": [
+                "disabled",
+                "external",
+                "rootful"
+            ],
             "title": "netfilter-mailcow mode",
             "description": "disabled: netfilter-mailcow does not run. external: it only keeps the mailcow ban list (Manage Fail2Ban externally), served at https://HOST/f2b-banlist.php?id=BANLIST_ID. rootful: it bans attackers itself, in the network namespace of the mailcow pod. If omitted, the current value is kept (default: external)."
         },
@@ -50,6 +58,22 @@
             "type": "boolean",
             "title": "ClamAV",
             "description": "Run the ClamAV antivirus. It needs about 1 GB of RAM more. If omitted, the current value is kept (default: true)."
+        },
+        "domain_certificates": {
+            "type": "boolean",
+            "title": "Certificates of the mail domains",
+            "description": "Give autodiscover.DOMAIN and autoconfig.DOMAIN of every active mailcow domain and alias domain a Traefik route to mailcow, with a Let's Encrypt certificate when lets_encrypt is true. If omitted, the current value is kept (default: the value of lets_encrypt)."
+        },
+        "additional_names": {
+            "type": "array",
+            "title": "Additional names",
+            "description": "More host names served by the mailcow web server, each with its own Traefik route and certificate, like ADDITIONAL_SAN of mailcow. If omitted, the current list is kept.",
+            "items": {
+                "type": "string",
+                "format": "hostname",
+                "pattern": "\\."
+            },
+            "uniqueItems": true
         }
     }
 }

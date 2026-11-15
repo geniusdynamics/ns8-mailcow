@@ -1,0 +1,17 @@
+#
+# Copyright (C) 2026 Genius Dynamics
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Traefik routes and certificates of the mailcow domains, see
+# bin/sync-domain-routes
+
+[Unit]
+Description=mailcow domain routes and certificates
+After=mysql-mailcow-app.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=%E/state
+ExecStart=/usr/local/bin/runagent sync-domain-routes
+SyslogIdentifier=mailcow-domain-routes

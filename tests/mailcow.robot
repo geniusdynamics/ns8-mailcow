@@ -69,6 +69,16 @@ Journal of the node has
     Should Not Be Empty    ${lines}    no "${text}" line from ${identifier} in the journal
     RETURN    ${lines}
 
+Route list
+    ${output}    ${rc} =    Execute Command    api-cli run module/traefik1/list-routes --data '{"expand_list": false}'    return_rc=True
+    Should Be Equal As Integers    ${rc}    0    ${output}
+    RETURN    ${output}
+
+Run SQL on mailcow
+    [Arguments]    ${sql}
+    ${output}    ${rc} =    Execute Command    echo "${sql}" | runagent -m ${module_id} podman exec -i mysql-mailcow-app sh -c 'exec mariadb -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"'    return_rc=True
+    Should Be Equal As Integers    ${rc}    0    ${output}
+
 CrowdSec has the mailcow parser
     ${output}    ${rc} =    Execute Command    podman exec ${crowdsec_id} cscli parsers inspect geniusdynamics/mailcow-logs    return_rc=True
     Should Be Equal As Integers    ${rc}    0    ${output}
@@ -160,6 +170,33 @@ Check netfilter in external mode
     Should Be Equal    ${status}    200
     ${status} =    Execute Command    curl -k -s -o /dev/null -w '\%{http_code}' --resolve ${HOST}:443:127.0.0.1 'https://${HOST}/f2b-banlist.php?id=wrong'
     Should Be Equal    ${status}    404
+
+Check the routes of the mail domains
+    ${output}    ${err}    ${rc} =    Execute Command    api-cli run module/${module_id}/configure-module --data '{"host":"${HOST}","http2https":true,"lets_encrypt":false,"domain_certificates":true,"additional_names":["webmail.example.org"]}'
+    ...    return_rc=True    return_stderr=True
+    Should Be Equal As Integers    ${rc}    0    configure-module failed: ${output} ${err}
+    ${routes} =    Route list
+    Should Contain    ${routes}    ${module_id}-san-webmail.example.org
+    # A domain added in the mailcow UI gets its autodiscover and autoconfig routes
+    Run SQL on mailcow    INSERT INTO domain (domain) VALUES ('routes.example.net')
+    Run on module    sync-domain-routes
+    ${routes} =    Route list
+    Should Contain    ${routes}    ${module_id}-san-autodiscover.routes.example.net
+    Should Contain    ${routes}    ${module_id}-san-autoconfig.routes.example.net
+    ${status} =    Execute Command    curl -k -s -o /dev/null -w '\%{http_code}' --resolve autoconfig.routes.example.net:443:127.0.0.1 'https://autoconfig.routes.example.net/mail/config-v1.1.xml?emailaddress=user@routes.example.net'
+    Should Be Equal    ${status}    200    the autoconfig route does not reach mailcow
+    ${output} =    Execute Command    api-cli run module/${module_id}/get-configuration
+    &{config} =    Evaluate    json.loads($output)    modules=json
+    Should Be Equal    ${config.domain_certificates}    ${True}
+    ${found} =    Evaluate    {"name": "autodiscover.routes.example.net", "status": "no_lets_encrypt"} in $config["certificate_names"]
+    Should Be True    ${found}    certificate_names: ${config.certificate_names}
+    # Deleted domain: its routes go away, the additional name stays
+    Run SQL on mailcow    DELETE FROM domain WHERE domain = 'routes.example.net'
+    Run on module    sync-domain-routes
+    ${routes} =    Route list
+    Should Not Contain    ${routes}    ${module_id}-san-autodiscover.routes.example.net
+    Should Not Contain    ${routes}    ${module_id}-san-autoconfig.routes.example.net
+    Should Contain    ${routes}    ${module_id}-san-webmail.example.org
 
 Check the CrowdSec rules
     [Tags]    crowdsec

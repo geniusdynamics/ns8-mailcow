@@ -19,6 +19,8 @@ for evar in [
         "MAILCOW_HOSTNAME",
         "NETFILTER_MODE",
         "CLAMD_ENABLED",
+        "DOMAIN_CERTIFICATES",
+        "ADDITIONAL_NAMES",
     ]:
     if evar in original_environment:
         agent.set_env(evar, original_environment[evar])
