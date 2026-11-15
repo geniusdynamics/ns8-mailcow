@@ -43,6 +43,9 @@ agent.set_env("MAILCOW_RELEASE", mailcow_ns8.dist_value("RELEASE"))
 sync = subprocess.run(["podman", "unshare", os.path.join(os.environ["AGENT_INSTALL_DIR"], "bin", "sync-mailcow-data")])
 agent.assert_exp(sync.returncode == 0, "sync-mailcow-data failed")
 
+if current["host"] and settings["host"] != current["host"]:
+    open(".host-changed", "w").close() # 30certificate
+
 changed = mailcow_ns8.write_env_files(settings)
 if changed or settings["host"] != current["host"]:
     # 80start_services restarts the pod
