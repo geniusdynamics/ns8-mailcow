@@ -32,6 +32,15 @@
     "mail_hostname_helper": "Name of the SMTP and IMAP server and of the mailcow web interface. Point its A record, and the MX record of your mail domains, to this node.",
     "lets_encrypt": "Request Let's Encrypt certificate",
     "http_to_https": "Force HTTPS",
+    "domain_certificates": "Certificates of the mail domains",
+    "domain_certificates_helper": "Every active domain and alias domain added in the mailcow UI gets autodiscover.DOMAIN and autoconfig.DOMAIN: a Traefik route to mailcow, with a Let's Encrypt certificate when that option is enabled. The names are updated every 5 minutes. Create their DNS records (A, or CNAME to the mail host name) first.",
+    "additional_names": "Additional names",
+    "additional_names_helper": "More host names for the mailcow web interface, one per line, each with its own route and certificate (like ADDITIONAL_SAN of mailcow).",
+    "certificate_names": "Names with a route",
+    "certificate_status_obtained": "certificate obtained",
+    "certificate_status_pending": "certificate pending: check that the DNS record points to this node",
+    "certificate_status_no_lets_encrypt": "no Let's Encrypt certificate",
+    "certificate_status_used_by_another_route": "skipped: another route serves this name",
     "enabled": "Enabled",
     "disabled": "Disabled",
     "clamd_enabled": "ClamAV antivirus",
@@ -51,7 +60,8 @@
     "mail_module_on_node": "The NS8 Mail app ({value}) runs on this node and uses the mail ports: mailcow cannot run with it",
     "mail_port_in_use": "Another service uses the ports {value} of this node",
     "host_pattern": "Must be a valid fully qualified domain name",
-    "host_format": "Must be a valid fully qualified domain name"
+    "host_format": "Must be a valid fully qualified domain name",
+    "name_is_the_mail_host_name": "The mail host name has its own route already"
   },
   "about": {
     "title": "About"

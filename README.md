@@ -24,7 +24,9 @@ api-cli run configure-module --agent module/mailcow1 --data - <<'EOF'
   "http2https": true,
   "lets_encrypt": true,
   "netfilter_mode": "external",
-  "clamd_enabled": true
+  "clamd_enabled": true,
+  "domain_certificates": true,
+  "additional_names": ["webmail.example.org"]
 }
 EOF
 ```
@@ -36,14 +38,54 @@ EOF
 | `http2https` | yes | boolean | Redirect HTTP to HTTPS |
 | `netfilter_mode` | no | `disabled`, `external`, `rootful` | netfilter-mailcow mode, see [Brute-force protection](#brute-force-protection). Default `external`; omitted, the current value is kept |
 | `clamd_enabled` | no | boolean | Run ClamAV (about 1 GB of RAM more). Default `true`; omitted, the current value is kept |
+| `domain_certificates` | no | boolean | Routes and certificates for `autodiscover.` and `autoconfig.` of every mailcow domain, see [Certificates of the mail domains](#certificates-of-the-mail-domains). Default: the value of `lets_encrypt`; omitted, the current value is kept |
+| `additional_names` | no | array of host names | More names for the mailcow web server, each with its own route and certificate (mailcow's `ADDITIONAL_SAN`). Omitted, the current list is kept |
 
 The Settings page of the app has the same fields. Point the A record of `host`, and the MX record of
 the mail domains, to the node. Domains, mailboxes, aliases, DKIM keys, relay hosts (Configuration >
 Routing) and spam settings are managed in the mailcow UI at `https://<host>/`; the first login is
 `admin` / `moohoo`: change it at once.
 
-`get-configuration` returns `host`, `http2https`, `lets_encrypt`, `netfilter_mode`, `clamd_enabled`,
-`mail_ports` and `mailcow_release`. It never returns secrets.
+`get-configuration` returns the parameters above, `mail_ports`, `mailcow_release` and
+`certificate_names` (each name with a route and the state of its certificate: `obtained`, `pending`,
+`no_lets_encrypt`, `used_by_another_route`). It never returns secrets.
+
+## Certificates of the mail domains
+
+Domains added in the mailcow UI need **no step in the NS8 UI**.
+
+What is automatic, with `domain_certificates` on (the default when `lets_encrypt` is on):
+
+- Every 5 minutes (`mailcow-domain-routes.timer`), and at each `configure-module`,
+  `bin/sync-domain-routes` reads the active domains and alias domains of the mailcow database. For each
+  one it creates a Traefik route for `autodiscover.<domain>` and `autoconfig.<domain>`, the names
+  acme-mailcow puts in the mailcow certificate. The routes lead to the mailcow web server and request a
+  Let's Encrypt certificate when `lets_encrypt` is on. The `additional_names` get a route each too.
+- When a domain is deleted, its routes are deleted. When nothing changed, the timer makes no Traefik call
+  and logs no change.
+- The routes are named `<module id>-san-<name>`: Traefik routes have one host each, and Traefik's
+  `set-certificate` keeps a single name per module (ns8-mail uses it for its host name only), so a route
+  per name is the way to get several certificates. Traefik removes them with the module.
+- A name that already has a route of another app is skipped and logged, not taken over.
+
+What the admin does, at the DNS provider of each mail domain:
+
+| Record | Value |
+|---|---|
+| `MX` of `<domain>` | the mail host name (`host`), which has its certificate |
+| `A`/`AAAA` of `host` | the public address of the node |
+| `autodiscover.<domain>`, `autoconfig.<domain>` | `CNAME` to `host` (or `A` to the node) |
+| SPF, DKIM, DMARC | the values the mailcow UI shows in the DNS check of the domain |
+
+A name whose DNS does not point to the node breaks nothing: Let's Encrypt fails for that route only.
+Traefik logs the error, `certificate_names` shows it `pending`, and the Settings page lists it. Traefik
+retries when its configuration changes.
+
+Mail clients use the mail host name for SMTP, IMAP and POP3: Postfix and Dovecot present its certificate
+(`events/certificate-changed`), and autodiscover/autoconfig tell the clients that name. Per-domain names
+such as `mail.<domain>` are not given to Postfix and Dovecot (mailcow's SNI): it would take one more
+certificate per domain, with the same DNS requirements, and mailcow's SNI is tied to acme-mailcow
+(`SKIP_LETS_ENCRYPT=n`). Point the clients and the MX records to the mail host name.
 
 ## Architecture
 
@@ -230,7 +272,7 @@ Pinned in `build-images.sh`, mailcow-dockerized 2026-11:
   `php-fpm-mailcow-app`, `sogo-mailcow-app`, `dovecot-mailcow-app`, `postfix-tlspol-mailcow-app`,
   `postfix-mailcow-app`, `olefy-mailcow-app`, `rspamd-mailcow-app`, `nginx-mailcow-app`
 - optional: `clamd-mailcow-app` (`clamd_enabled`), `netfilter-mailcow-app` (`netfilter_mode`)
-- timers: `mailcow-cron-*.timer`
+- timers: `mailcow-cron-*.timer`, `mailcow-domain-routes.timer`
 
 A unit reports "started" only when its service answers (`bin/wait-ready`): MariaDB and Redis ping,
 unbound answers, PHP-FPM listens (after the database upgrade), SOGo, Dovecot, Postfix and rspamd
@@ -272,7 +314,8 @@ Continuous integration:
 - `Publish images` builds the module image on every push.
 - `Test module` installs the image on QEMU NS8 nodes (Rocky Linux 9, Debian 13) and runs
   `tests/mailcow.robot`: configuration read-back, web UI through Traefik, mail ports on the node
-  firewall, SMTP banners on 25, 465 and 587, IMAP 143 and 993, POP3 and ManageSieve, failed logins in
+  firewall, the routes of a domain added to and deleted from the mailcow database, SMTP banners on 25,
+  465 and 587, IMAP 143 and 993, POP3 and ManageSieve, failed logins in
   the node journal, the CrowdSec rules (`cscli explain` in NS8 CrowdSec), and the three netfilter
   modes. The workflow runs from the default branch: its `vm_mem` and `timeout_minutes` take effect
   once merged to `main`.

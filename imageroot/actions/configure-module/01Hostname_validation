@@ -29,6 +29,14 @@ old_host = os.environ.get('TRAEFIK_HOST', '')
 if host != old_host and agent.http_route_in_use(domain=host):
     errors.append({'field': 'host', 'parameter': 'host', 'value': host, 'error': 'domain_already_used_in_traefik'})
 
+# Additional names: one Traefik route each (bin/sync-domain-routes)
+current_names = set(filter(None, os.environ.get('ADDITIONAL_NAMES', '').split(',')))
+for name in data.get('additional_names', []):
+    if name.lower() == (host or '').lower():
+        errors.append({'field': 'additional_names', 'parameter': 'additional_names', 'value': name, 'error': 'name_is_the_mail_host_name'})
+    elif name.lower() not in current_names and agent.http_route_in_use(domain=name):
+        errors.append({'field': 'additional_names', 'parameter': 'additional_names', 'value': name, 'error': 'domain_already_used_in_traefik'})
+
 # mailcow replaces the NS8 mail module: both need the mail ports of the node
 mail_modules = mailcow_ns8.mail_modules_on_node()
 if mail_modules:

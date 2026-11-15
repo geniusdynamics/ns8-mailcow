@@ -17,5 +17,8 @@ configure_retval = agent.tasks.run(agent_id=os.environ['AGENT_ID'], action='conf
     "http2https": os.environ.get("TRAEFIK_HTTP2HTTPS", "True").lower() == "true",
     "netfilter_mode": os.environ.get("NETFILTER_MODE", "external"),
     "clamd_enabled": os.environ.get("CLAMD_ENABLED", "True").lower() == "true",
+    # Routes of the mail domain names, without Let's Encrypt like the host
+    "domain_certificates": os.environ.get("DOMAIN_CERTIFICATES", "False").lower() == "true",
+    "additional_names": [name for name in os.environ.get("ADDITIONAL_NAMES", "").split(",") if name],
 })
 agent.assert_exp(configure_retval['exit_code'] == 0, "The configure-module subtask failed!")

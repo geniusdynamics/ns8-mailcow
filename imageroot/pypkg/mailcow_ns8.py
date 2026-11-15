@@ -41,6 +41,7 @@ CORE_UNITS = [
     "rspamd-mailcow-app.service",
     "nginx-mailcow-app.service",
 ]
+DOMAIN_ROUTES_TIMER = "mailcow-domain-routes.timer"
 CRON_TIMERS = [
     "mailcow-cron-minutely.timer",
     "mailcow-cron-5min.timer",
@@ -133,6 +134,10 @@ def settings_from_env():
         "lets_encrypt": os.getenv("TRAEFIK_LETS_ENCRYPT", "False").lower() == "true",
         "netfilter_mode": os.getenv("NETFILTER_MODE", DEFAULT_NETFILTER_MODE),
         "clamd_enabled": os.getenv("CLAMD_ENABLED", "True").lower() == "true",
+        # Routes and certificates of autodiscover/autoconfig.DOMAIN for the
+        # mailcow domains (bin/sync-domain-routes); default: like lets_encrypt
+        "domain_certificates": os.getenv("DOMAIN_CERTIFICATES", os.getenv("TRAEFIK_LETS_ENCRYPT", "False")).lower() == "true",
+        "additional_names": [name for name in os.getenv("ADDITIONAL_NAMES", "").split(",") if name],
     }
 
 
@@ -177,7 +182,8 @@ def mailcow_conf(settings, secrets_map):
         "MAILDIR_SUB": "Maildir",
         "ADDITIONAL_SAN": "",
         "AUTODISCOVER_SAN": "y",
-        "ADDITIONAL_SERVER_NAMES": "",
+        # nginx answers these names too (additional_names setting)
+        "ADDITIONAL_SERVER_NAMES": ",".join(settings.get("additional_names", [])),
         # Traefik provides the certificate, see events/certificate-changed
         "SKIP_LETS_ENCRYPT": "y",
         "ENABLE_SSL_SNI": "n",

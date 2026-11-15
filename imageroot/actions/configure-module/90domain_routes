@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2026 Genius Dynamics
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Routes and certificates of the mail domains and additional names, see
+# bin/sync-domain-routes. A failure is logged and retried by the timer: it
+# must not fail the configuration.
+
+exec 1>&2
+
+if ! "${AGENT_INSTALL_DIR}/bin/sync-domain-routes" --full; then
+    echo "<4>sync-domain-routes failed, mailcow-domain-routes.timer retries in 5 minutes"
+fi
+exit 0

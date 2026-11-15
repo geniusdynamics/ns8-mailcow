@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Genius Dynamics
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+"""Give the mail domains of mailcow their web names and certificates.
+
+For every active domain and alias domain of the mailcow database, the
+names acme-mailcow would have put in the mailcow certificate,
+autodiscover.DOMAIN and autoconfig.DOMAIN, get a Traefik route to the pod
+nginx, with Let's Encrypt when the lets_encrypt setting is on; so do the
+additional names of the settings. Traefik routes take one host each, and
+its set-certificate action keeps one name per module, so one route per
+name: <MODULE_ID>-san-<name>. Routes of names that are gone are deleted.
+
+Run by mailcow-domain-routes.timer (every 5 minutes) and configure-module
+(--full: compare with the Traefik route list too). Quiet when nothing
+changed. A name whose DNS does not point to the node only makes the Let's
+Encrypt request of its route fail: Traefik logs it, list-routes reports it
+"pending", get-configuration shows it.
+"""
+
+import json
+import os
+import re
+import subprocess
+import sys
+
+import agent
+import agent.tasks
+import mailcow_ns8
+
+STATE_FILE = "domain-routes.json"
+HOSTNAME_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]$")
+
+
+def log(message):
+    print(message, file=sys.stderr)
+
+
+def mail_domains():
+    """Active domains and alias domains, None if MariaDB does not answer"""
+    query = ("SELECT domain FROM domain WHERE active = 1 "
+             "UNION SELECT alias_domain FROM alias_domain WHERE active = 1")
+    proc = subprocess.run(
+        ["podman", "exec", "mysql-mailcow-app", "sh", "-c",
+         'exec mariadb -N -B -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" -e "$1"', "sh", query],
+        capture_output=True, text=True)
+    if proc.returncode != 0:
+        return None
+    return {line.strip().lower() for line in proc.stdout.splitlines() if line.strip()}
+
+
+def wanted_names(settings):
+    names = set()
+    if settings["domain_certificates"]:
+        domains = mail_domains()
+        if domains is None:
+            return None
+        for domain in domains:
+            names.update({f"autodiscover.{domain}", f"autoconfig.{domain}"})
+    names.update(name.lower() for name in settings["additional_names"])
+    names.discard(settings["host"].lower())
+    return {name for name in names if HOSTNAME_RE.match(name)}
+
+
+def route_id(name):
+    return f"{os.environ['MODULE_ID']}-san-{name}"
+
+
+def traefik(action, data):
+    return agent.tasks.run(
+        agent_id=agent.resolve_agent_id("traefik@node"),
+        action=action,
+        data=data,
+        extra={"isNotificationHidden": True},
+    )
+
+
+def read_state():
+    try:
+        with open(STATE_FILE) as fstate:
+            return json.load(fstate)
+    except (FileNotFoundError, ValueError):
+        return {"routes": {}}
+
+
+def write_state(state):
+    tmp = f"{STATE_FILE}.{os.getpid()}.tmp"
+    with open(tmp, "w") as fstate:
+        json.dump(state, fstate, indent=1, sort_keys=True)
+    os.replace(tmp, STATE_FILE)
+
+
+def main():
+    os.chdir(os.environ["AGENT_STATE_DIR"])
+    full = "--full" in sys.argv
+    if not os.getenv("MAILCOW_HOSTNAME") or not os.getenv("TCP_PORT"):
+        return 0 # not configured yet
+    settings = mailcow_ns8.settings_from_env()
+    names = wanted_names(settings)
+    if names is None:
+        log("sync-domain-routes: the mailcow database does not answer, routes are left as they are")
+        return 0
+
+    state = read_state()
+    current = state.get("routes", {})
+    route_conf = {
+        "url": "http://127.0.0.1:" + os.environ["TCP_PORT"],
+        "http2https": settings["http2https"],
+        "lets_encrypt": settings["lets_encrypt"],
+    }
+
+    if full:
+        # Trust the Traefik route list over the state file
+        response = traefik("list-routes", {"expand_list": True})
+        agent.assert_exp(response["exit_code"] == 0, "list-routes failed")
+        prefix = route_id("")
+        current = {}
+        for route in response["output"]:
+            if isinstance(route, dict) and route.get("instance", "").startswith(prefix):
+                current[route["instance"].removeprefix(prefix)] = {
+                    "url": route.get("url"),
+                    "http2https": route.get("http2https"),
+                    "lets_encrypt": route.get("lets_encrypt"),
+                }
+
+    changed = False
+    errors = 0
+    for name in sorted(set(current) - names):
+        response = traefik("delete-route", {"instance": route_id(name)})
+        if response["exit_code"] == 0:
+            log(f"sync-domain-routes: removed the route of {name}")
+            current.pop(name)
+            changed = True
+        else:
+            log(agent.SD_WARNING + f"sync-domain-routes: cannot remove the route of {name}")
+            errors += 1
+
+    skipped = []
+    for name in sorted(names):
+        if current.get(name) == route_conf:
+            continue
+        if name not in current and agent.http_route_in_use(domain=name):
+            # Another module, or a manual route, serves this name
+            skipped.append(name)
+            continue
+        response = traefik("set-route", dict(route_conf, instance=route_id(name), host=name))
+        if response["exit_code"] == 0:
+            log(f"sync-domain-routes: route of {name} (Let's Encrypt: {settings['lets_encrypt']})")
+            current[name] = route_conf
+            changed = True
+        else:
+            log(agent.SD_WARNING + f"sync-domain-routes: cannot set the route of {name}: {response.get('error', '')}")
+            errors += 1
+
+    if skipped != state.get("skipped", []):
+        for name in skipped:
+            log(agent.SD_WARNING + f"sync-domain-routes: {name} has a route of another instance, skipped")
+        changed = True
+    if changed or full or not os.path.exists(STATE_FILE):
+        write_state({"routes": current, "skipped": skipped})
+    return 1 if errors else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

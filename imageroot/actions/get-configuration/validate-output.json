@@ -10,8 +10,29 @@
             "lets_encrypt": true,
             "netfilter_mode": "external",
             "clamd_enabled": true,
-            "mail_ports": [25, 465, 587, 143, 993, 110, 995, 4190],
-            "mailcow_release": "2026-11"
+            "mail_ports": [
+                25,
+                465,
+                587,
+                143,
+                993,
+                110,
+                995,
+                4190
+            ],
+            "mailcow_release": "2026-11",
+            "domain_certificates": true,
+            "additional_names": [],
+            "certificate_names": [
+                {
+                    "name": "autodiscover.example.org",
+                    "status": "obtained"
+                },
+                {
+                    "name": "autoconfig.example.org",
+                    "status": "pending"
+                }
+            ]
         }
     ],
     "type": "object",
@@ -40,7 +61,11 @@
         },
         "netfilter_mode": {
             "type": "string",
-            "enum": ["disabled", "external", "rootful"],
+            "enum": [
+                "disabled",
+                "external",
+                "rootful"
+            ],
             "description": "netfilter-mailcow mode"
         },
         "clamd_enabled": {
@@ -49,12 +74,50 @@
         },
         "mail_ports": {
             "type": "array",
-            "items": {"type": "integer"},
+            "items": {
+                "type": "integer"
+            },
             "description": "TCP ports published on the node"
         },
         "mailcow_release": {
             "type": "string",
             "description": "mailcow-dockerized release of the configuration files"
+        },
+        "domain_certificates": {
+            "type": "boolean",
+            "description": "Routes and certificates of autodiscover/autoconfig.DOMAIN for the mailcow domains"
+        },
+        "additional_names": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Additional names with a route and certificate"
+        },
+        "certificate_names": {
+            "type": "array",
+            "description": "Names with a route of the module, besides host",
+            "items": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "status"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "obtained",
+                            "pending",
+                            "no_lets_encrypt",
+                            "used_by_another_route"
+                        ]
+                    }
+                }
+            }
         }
     }
 }
