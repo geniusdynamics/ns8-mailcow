@@ -22,6 +22,7 @@ Encrypt request of its route fail: Traefik logs it, list-routes reports it
 "pending", get-configuration shows it.
 """
 
+import fcntl
 import json
 import os
 import re
@@ -96,6 +97,9 @@ def write_state(state):
 
 def main():
     os.chdir(os.environ["AGENT_STATE_DIR"])
+    # The timer and configure-module may run at the same time
+    lock = open(".domain-routes.lock", "w")
+    fcntl.flock(lock, fcntl.LOCK_EX)
     full = "--full" in sys.argv
     if not os.getenv("MAILCOW_HOSTNAME") or not os.getenv("TCP_PORT"):
         return 0 # not configured yet
